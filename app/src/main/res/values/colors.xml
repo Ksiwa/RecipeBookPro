@@ -1,22 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Light Mode Colors -->
-    <color name="md_theme_light_primary">#825500</color>
+    <color name="md_theme_light_primary">#8A4B24</color>
     <color name="md_theme_light_onPrimary">#FFFFFF</color>
-    <color name="md_theme_light_primaryContainer">#FFDDAE</color>
-    <color name="md_theme_light_onPrimaryContainer">#2A1800</color>
-    <color name="md_theme_light_background">#FFFBFF</color>
-    <color name="md_theme_light_onBackground">#1F1B16</color>
-    <color name="md_theme_light_surface">#FFFBFF</color>
-    <color name="md_theme_light_onSurface">#1F1B16</color>
+    <color name="md_theme_light_primaryContainer">#FFDCC9</color>
+    <color name="md_theme_light_onPrimaryContainer">#331200</color>
+    <color name="md_theme_light_secondary">#77574A</color>
+    <color name="md_theme_light_onSecondary">#FFFFFF</color>
+    <color name="md_theme_light_secondaryContainer">#FFDBCC</color>
+    <color name="md_theme_light_onSecondaryContainer">#2C160D</color>
+    <color name="md_theme_light_tertiary">#64612E</color>
+    <color name="md_theme_light_onTertiary">#FFFFFF</color>
+    <color name="md_theme_light_tertiaryContainer">#EBE6A7</color>
+    <color name="md_theme_light_onTertiaryContainer">#1E1D00</color>
+    <color name="md_theme_light_error">#BA1A1A</color>
+    <color name="md_theme_light_onError">#FFFFFF</color>
+    <color name="md_theme_light_background">#FFF8F5</color>
+    <color name="md_theme_light_onBackground">#231A16</color>
+    <color name="md_theme_light_surface">#FFF8F5</color>
+    <color name="md_theme_light_onSurface">#231A16</color>
+    <color name="md_theme_light_surfaceVariant">#F5DED5</color>
+    <color name="md_theme_light_onSurfaceVariant">#53433D</color>
+    <color name="md_theme_light_outline">#85736C</color>
+    <color name="md_theme_light_outlineVariant">#D8C2BA</color>
 
-    <!-- Dark Mode Colors -->
-    <color name="md_theme_dark_primary">#FFB94E</color>
-    <color name="md_theme_dark_onPrimary">#452B00</color>
-    <color name="md_theme_dark_primaryContainer">#624000</color>
-    <color name="md_theme_dark_onPrimaryContainer">#FFDDAE</color>
-    <color name="md_theme_dark_background">#1F1B16</color>
-    <color name="md_theme_dark_onBackground">#EAE1D9</color>
-    <color name="md_theme_dark_surface">#1F1B16</color>
-    <color name="md_theme_dark_onSurface">#EAE1D9</color>
+    <color name="md_theme_dark_primary">#FFB690</color>
+    <color name="md_theme_dark_onPrimary">#522300</color>
+    <color name="md_theme_dark_primaryContainer">#703500</color>
+    <color name="md_theme_dark_onPrimaryContainer">#FFDCC9</color>
+    <color name="md_theme_dark_secondary">#E7BDB0</color>
+    <color name="md_theme_dark_onSecondary">#44291F</color>
+    <color name="md_theme_dark_secondaryContainer">#5D3F34</color>
+    <color name="md_theme_dark_onSecondaryContainer">#FFDBCC</color>
+    <color name="md_theme_dark_tertiary">#CEC98E</color>
+    <color name="md_theme_dark_onTertiary">#353208</color>
+    <color name="md_theme_dark_tertiaryContainer">#4C491B</color>
+    <color name="md_theme_dark_onTertiaryContainer">#EBE6A7</color>
+    <color name="md_theme_dark_error">#FFB4AB</color>
+    <color name="md_theme_dark_onError">#690005</color>
+    <color name="md_theme_dark_background">#1A120F</color>
+    <color name="md_theme_dark_onBackground">#F0DFD8</color>
+    <color name="md_theme_dark_surface">#1A120F</color>
+    <color name="md_theme_dark_onSurface">#F0DFD8</color>
+    <color name="md_theme_dark_surfaceVariant">#53433D</color>
+    <color name="md_theme_dark_onSurfaceVariant">#D8C2BA</color>
+    <color name="md_theme_dark_outline">#A08D86</color>
+    <color name="md_theme_dark_outlineVariant">#53433D</color>
+
+    <color name="book_scene_top">#4F2F1F</color>
+    <color name="book_scene_bottom">#2E1C14</color>
+    <color name="book_cover_base">#7A523A</color>
+    <color name="book_cover_shadow">#593828</color>
+    <color name="book_cover_title">#F8F1E6</color>
+    <color name="book_cover_subtle">#D7C0AA</color>
+    <color name="book_paper">#F7F0E3</color>
+    <color name="book_paper_edge">#E4D8C4</color>
+    <color name="book_rule_line">#D7C4AA</color>
+    <color name="book_margin_line">#D9A090</color>
+    <color name="book_ink">#4A2E22</color>
+    <color name="book_body_ink">#5A4032</color>
+    <color name="book_note_ink">#775B4B</color>
+    <color name="book_section_title">#5A3523</color>
+    <color name="book_page_number">#977861</color>
+    <color name="book_toolbar_title">#F9F1E3</color>
+    <color name="book_toolbar_subtitle">#DEC4AA</color>
+    <color name="book_toolbar_button">#F8E6CC</color>
+    <color name="book_accent">#D1A15A</color>
+    <color name="book_accent_soft">#D8B98B</color>
+    <color name="book_ink_on_dark">#4B2E1E</color>
+
+    <color name="category_dessert">#F3C7D9</color>
+    <color name="category_main_course">#D7C7FF</color>
+    <color name="category_soup">#FFD39F</color>
+    <color name="category_breakfast">#FFE8A3</color>
+    <color name="category_snack">#CDEAC0</color>
+    <color name="category_drink">#BDE3FF</color>
+    <color name="category_salad">#BEE9C8</color>
+    <color name="category_pastry">#F2D3BA</color>
 </resources>

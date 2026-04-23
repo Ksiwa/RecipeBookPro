@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_book_paper_page"
+        android:elevation="8dp">
+
+        <View
+            android:layout_width="2dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="52dp"
+            android:background="@color/book_margin_line" />
+
+        <FrameLayout
+            android:id="@+id/stickerLayer"
+            android:layout_width="120dp"
+            android:layout_height="96dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="28dp"
+            android:layout_marginEnd="18dp"
+            android:background="@android:color/transparent" />
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="72dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="34dp"
+            android:paddingBottom="58dp"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvPageTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="104dp"
+                    android:fontFamily="serif"
+                    android:lineSpacingExtra="6dp"
+                    android:textColor="@color/book_ink"
+                    android:textSize="29sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvPageCategory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_book_cover_label"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="4dp"
+                    android:textColor="@color/book_cover_title"
+                    android:textSize="12sp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="14dp"
+                    android:background="@color/book_rule_line" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvPageDescLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="cursive"
+                    android:text="@string/recipe_note_label"
+                    android:textColor="@color/book_accent"
+                    android:textSize="17sp" />
+
+                <View
+                    android:id="@+id/viewDescDivider"
+                    android:layout_width="42dp"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@color/book_accent_soft" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvPageDesc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:fontFamily="serif"
+                    android:lineSpacingExtra="5dp"
+                    android:textColor="@color/book_note_ink"
+                    android:textSize="15sp"
+                    android:textStyle="italic" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="serif"
+                    android:text="@string/ingredients"
+                    android:textColor="@color/book_section_title"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="58dp"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="@color/book_accent" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvPageIngredients"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="28dp"
+                    android:fontFamily="serif"
+                    android:lineSpacingExtra="8dp"
+                    android:textColor="@color/book_body_ink"
+                    android:textSize="15sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="serif"
+                    android:text="@string/steps"
+                    android:textColor="@color/book_section_title"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="58dp"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="@color/book_accent" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvPageSteps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="18dp"
+                    android:fontFamily="serif"
+                    android:lineSpacingExtra="9dp"
+                    android:textColor="@color/book_body_ink"
+                    android:textSize="15sp" />
+
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tvPageNum"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="22dp"
+            android:layout_marginBottom="14dp"
+            android:fontFamily="serif"
+            android:textColor="@color/book_page_number"
+            android:textSize="13sp"
+            android:textStyle="italic" />
+
+    </FrameLayout>
+
+</FrameLayout>
