@@ -1,44 +1,106 @@
 <resources>
     <string name="app_name">RecipeBook Pro</string>
-    <string name="login">Giriş Yap</string>
-    <string name="register">Kayıt Ol</string>
-    <string name="welcome">RecipeBook Pro\'ya Hoş Geldiniz</string>
-    <string name="loading">Yükleniyor…</string>
-    <string name="no_recipes_yet">Henüz tarif yok. Eklemek için +\'ya dokunun!</string>
+    <string name="login">Giris Yap</string>
+    <string name="register">Kayit Ol</string>
+    <string name="welcome">RecipeBook Pro uygulamasina hos geldiniz</string>
+    <string name="loading">Yukleniyor...</string>
     <string name="email">E-posta</string>
-    <string name="password">Şifre</string>
-    <string name="confirm_password">Şifreyi Onayla</string>
+    <string name="password">Sifre</string>
+    <string name="confirm_password">Sifreyi Onayla</string>
     <string name="display_name">Ad Soyad</string>
-    <string name="logout">Çıkış Yap</string>
-    <string name="invalid_email">Geçersiz e-posta formatı</string>
-    <string name="empty_fields">Lütfen tüm alanları doldurun</string>
-    <string name="password_too_short">Şifre en az 6 karakter olmalıdır</string>
-    <string name="passwords_not_match">Şifreler eşleşmiyor</string>
-    <string name="login_failed">Giriş başarısız. Bilgilerinizi kontrol edin.</string>
-    <string name="register_failed">Kayıt başarısız. Lütfen tekrar deneyin.</string>
-    <string name="no_account">Hesabınız yok mu? Kayıt Olun</string>
-    <string name="already_have_account">Zaten hesabınız var mı? Giriş Yapın</string>
-    <string name="sign_up">Kayıt Ol</string>
-    <string name="sign_in">Giriş Yap</string>
-    <string name="sign_in_with_google">Google ile Giriş Yap</string>
-    <string name="google_sign_in_failed">Google girişi başarısız. Lütfen tekrar deneyin.</string>
+    <string name="logout">Cikis Yap</string>
+    <string name="invalid_email">Gecersiz e-posta formati</string>
+    <string name="empty_fields">Lutfen tum alanlari doldurun.</string>
+    <string name="password_too_short">Sifre en az 6 karakter olmali.</string>
+    <string name="passwords_not_match">Sifreler eslesmiyor.</string>
+    <string name="login_failed">Giris basarisiz. Bilgilerinizi kontrol edin.</string>
+    <string name="register_failed">Kayit basarisiz. Lutfen tekrar deneyin.</string>
+    <string name="no_account">Hesabiniz yok mu? Kayit Olun</string>
+    <string name="already_have_account">Zaten hesabiniz var mi? Giris Yapin</string>
+    <string name="sign_up">Kayit Ol</string>
+    <string name="sign_in">Giris Yap</string>
+    <string name="sign_in_with_google">Google ile Giris Yap</string>
+    <string name="google_sign_in_failed">Google girisi basarisiz. Lutfen tekrar deneyin.</string>
 
-    <!-- Phase 3: Tarif CRUD -->
     <string name="add_recipe">Tarif Ekle</string>
-    <string name="recipe_title">Tarif Adı</string>
-    <string name="recipe_description">Açıklama</string>
+    <string name="recipe_title">Tarif Adi</string>
+    <string name="recipe_description">Aciklama</string>
     <string name="ingredients">Malzemeler</string>
-    <string name="steps">Yapılış Adımları</string>
+    <string name="steps">Hazirlama Adimlari</string>
     <string name="save">Kaydet</string>
+    <string name="save_recipe">Tarifi Kaydet</string>
     <string name="delete">Sil</string>
-    <string name="cancel">İptal</string>
-    <string name="no_recipes">Henüz tarif yok. İlk tarifinizi eklemek için +\'ya dokunun!</string>
-    <string name="recipe_saved">Tarif başarıyla kaydedildi!</string>
+    <string name="delete_recipe">Tarifi Sil</string>
+    <string name="cancel">Iptal</string>
+    <string name="no_recipes">Henuz tarif yok. Ilk tarifinizi eklemek icin + butonuna dokunun.</string>
+    <string name="no_recipes_for_category">%1$s kategorisinde tarif bulunamadi.</string>
+    <string name="recipe_saved">Tarif basariyla kaydedildi.</string>
     <string name="recipe_deleted">Tarif silindi.</string>
-    <string name="recipe_save_failed">Tarif kaydedilemedi. Lütfen tekrar deneyin.</string>
-    <string name="recipe_delete_failed">Tarif silinemedi. Lütfen tekrar deneyin.</string>
-    <string name="fill_all_fields">Lütfen başlık, malzemeler ve adımları doldurun.</string>
+    <string name="recipe_save_failed">Tarif kaydedilemedi. Lutfen tekrar deneyin.</string>
+    <string name="recipe_delete_failed">Tarif silinemedi. Lutfen tekrar deneyin.</string>
     <string name="my_recipes">Tariflerim</string>
-    <string name="view_details">Tarif Detayı</string>
-    <string name="confirm_delete">Bu tarifi silmek istediğinize emin misiniz?</string>
+    <string name="view_details">Tarif Detayi</string>
+    <string name="confirm_delete">Bu tarifi silmek istediginize emin misiniz?</string>
+    <string name="description">Aciklama</string>
+    <string name="recipes_load_failed">Tarifler yuklenemedi. Baglantinizi kontrol edin.</string>
+
+    <string name="category">Kategori</string>
+    <string name="category_all">Tumu</string>
+    <string name="category_unknown">Kategorisiz</string>
+    <string name="required_field">Zorunlu alan</string>
+    <string name="add_ingredient">Malzeme Ekle</string>
+    <string name="remove_ingredient">Malzemeyi Kaldir</string>
+    <string name="ingredient_name">Malzeme adi</string>
+    <string name="amount">Miktar</string>
+    <string name="unit">Birim</string>
+    <string name="unit_pack">paket</string>
+    <string name="ingredient_required_message">En az bir eksiksiz malzeme satiri ekleyin.</string>
+    <string name="at_least_one_ingredient">En az bir malzeme gerekli.</string>
+    <string name="no_description">Aciklama eklenmemis.</string>
+    <string name="no_ingredients">Malzeme eklenmemis.</string>
+    <string name="no_steps">Adim eklenmemis.</string>
+
+    <string name="my_recipe_book">Tarif Defterim</string>
+    <string name="table_of_contents">Icindekiler</string>
+    <string name="page_number">Sayfa %1$d / %2$d</string>
+    <string name="no_recipes_in_book">Gosterilecek tarif yok. Once tarif ekleyin.</string>
+    <string name="cover">Kapak</string>
+    <string name="swipe_to_open">Baslamak icin sayfayi cevirin</string>
+    <string name="open_recipe_journal">Tarif Defterini Ac</string>
+    <string name="toc_short">IC</string>
+    <string name="cover_page_label">Kapak sayfasi</string>
+    <string name="recipe_page_label">Tarif sayfasi %1$d</string>
+    <string name="recipe_count_label">%1$d tarif</string>
+    <string name="cover_caption">Mutfak Notlari</string>
+    <string name="cover_decorative_line">Cirpici • Kasik • Firin • Kalp</string>
+    <string name="toc_chapter_label">Bolum I</string>
+    <string name="recipe_note_label">Kisa not</string>
+    <string name="toc_bullet">•</string>
+    <string name="toc_dots"> ........ </string>
+
+    <string-array name="recipe_categories">
+        <item>Tatli</item>
+        <item>Ana Yemek</item>
+        <item>Corba</item>
+        <item>Kahvaltilik</item>
+        <item>Atistirmalik</item>
+        <item>Icecek</item>
+        <item>Salata</item>
+        <item>Hamur Isi</item>
+    </string-array>
+
+    <string-array name="ingredient_units">
+        <item>adet</item>
+        <item>gram</item>
+        <item>kilogram</item>
+        <item>litre</item>
+        <item>mililitre</item>
+        <item>su bardagi</item>
+        <item>cay bardagi</item>
+        <item>yemek kasigi</item>
+        <item>tatli kasigi</item>
+        <item>cay kasigi</item>
+        <item>tutam</item>
+        <item>@string/unit_pack</item>
+    </string-array>
 </resources>

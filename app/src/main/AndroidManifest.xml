@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Required for Firebase Authentication and Firestore network access. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.RecipeBookPro">
 
@@ -37,10 +40,16 @@
         <activity
             android:name=".ui.recipe.AddRecipeActivity"
             android:exported="false"
-            android:theme="@style/Theme.RecipeBookPro.NoActionBar" />
+            android:theme="@style/Theme.RecipeBookPro.NoActionBar"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
 
         <activity
             android:name=".ui.recipe.RecipeDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RecipeBookPro.NoActionBar" />
+
+        <activity
+            android:name=".ui.book.BookReaderActivity"
             android:exported="false"
             android:theme="@style/Theme.RecipeBookPro.NoActionBar" />
 

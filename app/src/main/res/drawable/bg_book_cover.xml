@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="315"
+        android:endColor="@color/book_cover_shadow"
+        android:startColor="@color/book_cover_base" />
+    <corners android:radius="30dp" />
+    <stroke
+        android:width="1dp"
+        android:color="#9C7557" />
+</shape>

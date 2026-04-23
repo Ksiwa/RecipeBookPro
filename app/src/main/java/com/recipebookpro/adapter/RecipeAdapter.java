@@ -5,8 +5,11 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.chip.Chip;
+import com.google.android.material.color.MaterialColors;
 import com.google.android.material.textview.MaterialTextView;
 import com.recipebookpro.R;
 import com.recipebookpro.model.Recipe;
@@ -14,13 +17,15 @@ import com.recipebookpro.model.Recipe;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder> {
 
-    private List<Recipe> recipeList = new ArrayList<>();
-    private OnRecipeClickListener listener;
+    private final List<Recipe> recipeList = new ArrayList<>();
+    private final OnRecipeClickListener listener;
 
     public interface OnRecipeClickListener {
         void onRecipeClick(Recipe recipe);
@@ -31,10 +36,25 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     }
 
     public void setRecipeList(List<Recipe> list) {
-        this.recipeList.clear();
+        recipeList.clear();
         if (list != null) {
-            this.recipeList.addAll(list);
+            Set<String> addedIds = new LinkedHashSet<>();
+            for (Recipe recipe : list) {
+                if (recipe == null) {
+                    continue;
+                }
+                String recipeId = recipe.getId() != null ? recipe.getId() : "";
+                if (!recipeId.isEmpty() && !addedIds.add(recipeId)) {
+                    continue;
+                }
+                recipeList.add(recipe);
+            }
         }
+        notifyDataSetChanged();
+    }
+
+    public void clearRecipes() {
+        recipeList.clear();
         notifyDataSetChanged();
     }
 
@@ -48,8 +68,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
     @Override
     public void onBindViewHolder(@NonNull RecipeViewHolder holder, int position) {
-        Recipe recipe = recipeList.get(position);
-        holder.bind(recipe);
+        holder.bind(recipeList.get(position));
     }
 
     @Override
@@ -58,18 +77,33 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     }
 
     class RecipeViewHolder extends RecyclerView.ViewHolder {
-        private final MaterialTextView tvTitle, tvDescription, tvDate;
+        private final MaterialTextView tvTitle;
+        private final MaterialTextView tvDescription;
+        private final MaterialTextView tvDate;
+        private final MaterialTextView tvIngredientsPreview;
+        private final Chip chipCategory;
 
         RecipeViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.tvRecipeTitle);
             tvDescription = itemView.findViewById(R.id.tvRecipeDescription);
             tvDate = itemView.findViewById(R.id.tvRecipeDate);
+            tvIngredientsPreview = itemView.findViewById(R.id.tvIngredientsPreview);
+            chipCategory = itemView.findViewById(R.id.chipRecipeCategory);
         }
 
         void bind(Recipe recipe) {
-            tvTitle.setText(recipe.getTitle() != null ? recipe.getTitle() : "");
-            tvDescription.setText(recipe.getDescription() != null ? recipe.getDescription() : "");
+            tvTitle.setText(recipe.getTitle());
+            tvDescription.setText(recipe.getDescription());
+            tvIngredientsPreview.setText(recipe.getFormattedIngredients());
+
+            if (recipe.getCategory() == null || recipe.getCategory().trim().isEmpty()) {
+                chipCategory.setVisibility(View.GONE);
+            } else {
+                chipCategory.setVisibility(View.VISIBLE);
+                chipCategory.setText(recipe.getCategory());
+                applyCategoryColor(chipCategory, recipe.getCategory());
+            }
 
             if (recipe.getCreatedAt() > 0) {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
@@ -83,6 +117,43 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                     listener.onRecipeClick(recipe);
                 }
             });
+        }
+
+        private void applyCategoryColor(Chip chip, String category) {
+            int baseColor;
+            switch (category) {
+                case "Tatli":
+                    baseColor = ContextCompat.getColor(chip.getContext(), R.color.category_dessert);
+                    break;
+                case "Ana Yemek":
+                    baseColor = ContextCompat.getColor(chip.getContext(), R.color.category_main_course);
+                    break;
+                case "Corba":
+                    baseColor = ContextCompat.getColor(chip.getContext(), R.color.category_soup);
+                    break;
+                case "Kahvaltilik":
+                    baseColor = ContextCompat.getColor(chip.getContext(), R.color.category_breakfast);
+                    break;
+                case "Atistirmalik":
+                    baseColor = ContextCompat.getColor(chip.getContext(), R.color.category_snack);
+                    break;
+                case "Icecek":
+                    baseColor = ContextCompat.getColor(chip.getContext(), R.color.category_drink);
+                    break;
+                case "Salata":
+                    baseColor = ContextCompat.getColor(chip.getContext(), R.color.category_salad);
+                    break;
+                case "Hamur Isi":
+                    baseColor = ContextCompat.getColor(chip.getContext(), R.color.category_pastry);
+                    break;
+                default:
+                    baseColor = MaterialColors.getColor(chip, com.google.android.material.R.attr.colorSecondaryContainer);
+                    break;
+            }
+
+            chip.setChipBackgroundColorResource(android.R.color.transparent);
+            chip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(baseColor));
+            chip.setTextColor(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnSecondaryContainer));
         }
     }
 }
