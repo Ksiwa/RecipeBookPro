@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/profileRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/padding_medium"
+    android:background="?attr/colorSurface">
+
+    <ImageView
+        android:id="@+id/ivProfileAvatar"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="@dimen/margin_large"
+        android:src="@drawable/ic_nav_profile"
+        android:alpha="0.5"
+        android:importantForAccessibility="no"
+        app:tint="?attr/colorPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvProfileEmailLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/margin_medium"
+        android:text="@string/profile_email_label"
+        android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+        android:alpha="0.6"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ivProfileAvatar" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvProfileEmail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/loading"
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvProfileEmailLabel" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSettings"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/margin_large"
+        android:text="@string/profile_settings"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvProfileEmail" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAdminPanel"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/margin_small"
+        android:text="@string/profile_admin"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnSettings" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnLogout"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/margin_large"
+        android:text="@string/logout"
+        android:textColor="?attr/colorError"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnAdminPanel" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

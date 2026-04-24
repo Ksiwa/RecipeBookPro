@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="conversion_unit_names">
+        <item>su bardağı (un)</item>
+        <item>su bardağı (su)</item>
+        <item>çay bardağı</item>
+        <item>yemek kaşığı</item>
+        <item>tatlı kaşığı</item>
+        <item>litre</item>
+        <item>pound</item>
+        <item>ounce</item>
+    </string-array>
+
+    <string-array name="conversion_target_units">
+        <item>gram</item>
+        <item>ml</item>
+        <item>ml</item>
+        <item>ml</item>
+        <item>ml</item>
+        <item>ml</item>
+        <item>gram</item>
+        <item>gram</item>
+    </string-array>
+
+    <string-array name="conversion_factors">
+        <item>120.0</item>
+        <item>200.0</item>
+        <item>100.0</item>
+        <item>15.0</item>
+        <item>5.0</item>
+        <item>1000.0</item>
+        <item>453.6</item>
+        <item>28.35</item>
+    </string-array>
+</resources>

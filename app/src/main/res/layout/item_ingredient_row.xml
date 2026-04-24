@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/ingredientRowRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp"
+    android:background="?attr/selectableItemBackground">
+
+    <View
+        android:id="@+id/allergyIndicator"
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:background="?attr/colorError"
+        android:visibility="gone"
+        android:layout_marginEnd="12dp" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvIngredientAmountUnit"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textStyle="bold"
+        android:textColor="?attr/colorPrimary"
+        tools:text="1 1/2 su bardagi" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvIngredientName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="8dp"
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+        tools:text="Un" />
+
+</LinearLayout>

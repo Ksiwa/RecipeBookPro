@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/homeFragment"
+        android:icon="@drawable/ic_nav_home_selector"
+        android:title="@string/nav_home" />
+
+    <item
+        android:id="@+id/discoverFragment"
+        android:icon="@drawable/ic_nav_discover_selector"
+        android:title="@string/nav_discover" />
+
+    <item
+        android:id="@+id/myKitchenFragment"
+        android:icon="@drawable/ic_nav_kitchen_selector"
+        android:title="@string/nav_my_kitchen" />
+
+    <item
+        android:id="@+id/plannerFragment"
+        android:icon="@drawable/ic_nav_planner_selector"
+        android:title="@string/nav_planner" />
+
+    <item
+        android:id="@+id/profileFragment"
+        android:icon="@drawable/ic_nav_profile_selector"
+        android:title="@string/nav_profile" />
+
+</menu>
