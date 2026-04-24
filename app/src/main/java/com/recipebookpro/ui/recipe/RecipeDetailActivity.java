@@ -1,25 +1,37 @@
 package com.recipebookpro.ui.recipe;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
-import com.recipebookpro.ui.BaseActivity;
+import androidx.appcompat.app.AlertDialog;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.button.MaterialButton;
-import com.google.android.material.chip.Chip;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.progressindicator.CircularProgressIndicator;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.textview.MaterialTextView;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.recipebookpro.R;
 import com.recipebookpro.model.Recipe;
+import com.recipebookpro.model.User;
+import com.recipebookpro.ui.BaseActivity;
+import com.recipebookpro.ui.recipe.adapter.RecipeDetailPagerAdapter;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import java.util.ArrayList;
+import java.util.List;
+
+import coil.Coil;
+import coil.request.ImageRequest;
 
 public class RecipeDetailActivity extends BaseActivity {
 
@@ -27,9 +39,11 @@ public class RecipeDetailActivity extends BaseActivity {
 
     private Recipe recipe;
     private FirebaseFirestore db;
-    private View rootView;
-    private CircularProgressIndicator progressIndicator;
-    private MaterialButton btnDelete;
+    private FirebaseAuth mAuth;
+    private FirebaseUser currentUser;
+    
+    private ArrayList<String> userAllergens = new ArrayList<>();
+    private boolean isLiked = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,85 +53,193 @@ public class RecipeDetailActivity extends BaseActivity {
         applyInsetsToView(findViewById(R.id.recipeDetailRoot));
 
         recipe = (Recipe) getIntent().getSerializableExtra(EXTRA_RECIPE);
+        if (recipe == null && getIntent().getData() != null) {
+            String recipeId = getIntent().getData().getLastPathSegment();
+            if (!TextUtils.isEmpty(recipeId)) {
+                fetchRecipeFromDeepLink(recipeId);
+                return;
+            }
+        }
+
         if (recipe == null) {
             finish();
             return;
         }
 
         db = FirebaseFirestore.getInstance();
-        rootView = findViewById(R.id.recipeDetailRoot);
-        progressIndicator = findViewById(R.id.progressDeleteRecipe);
-        btnDelete = findViewById(R.id.btnDeleteRecipe);
+        mAuth = FirebaseAuth.getInstance();
+        currentUser = mAuth.getCurrentUser();
 
+        setupToolbar();
+        loadUserAllergensAndSetupPager();
+        setupFAB();
+    }
+
+    private void fetchRecipeFromDeepLink(String recipeId) {
+        db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
+        currentUser = mAuth.getCurrentUser();
+        
+        db.collection("recipes").document(recipeId).get().addOnSuccessListener(doc -> {
+            if (doc.exists()) {
+                recipe = Recipe.fromDocument(doc);
+                setupToolbar();
+                loadUserAllergensAndSetupPager();
+                setupFAB();
+            } else {
+                Toast.makeText(this, "Tarif bulunamadı", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }).addOnFailureListener(e -> {
+            Toast.makeText(this, "Bağlantı hatası", Toast.LENGTH_SHORT).show();
+            finish();
+        });
+    }
+
+    private void setupToolbar() {
         MaterialToolbar toolbar = findViewById(R.id.toolbarDetail);
+        toolbar.setTitle(recipe.getTitle());
+
         toolbar.setNavigationOnClickListener(v -> finish());
+        
+        toolbar.setOnMenuItemClickListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.action_share) {
+                shareRecipe();
+                return true;
+            } else if (itemId == R.id.action_like) {
+                toggleLike(item);
+                return true;
+            } else if (itemId == R.id.action_edit) {
+                Intent intent = new Intent(this, RecipeAddEditActivity.class);
+                intent.putExtra(RecipeAddEditActivity.EXTRA_RECIPE, recipe);
+                startActivity(intent);
+                finish(); // Close current to allow fresh reload when returning
+                return true;
+            } else if (itemId == R.id.action_delete) {
+                showDeleteDialog();
+                return true;
+            }
+            return false;
+        });
 
-        MaterialTextView tvTitle = findViewById(R.id.tvDetailTitle);
-        Chip chipCategory = findViewById(R.id.chipDetailCategory);
-        MaterialTextView tvDate = findViewById(R.id.tvDetailDate);
-        MaterialTextView tvDescription = findViewById(R.id.tvDetailDescription);
-        MaterialTextView tvIngredients = findViewById(R.id.tvDetailIngredients);
-        MaterialTextView tvSteps = findViewById(R.id.tvDetailSteps);
-
-        tvTitle.setText(recipe.getTitle());
-        chipCategory.setText(recipe.getCategory());
-        chipCategory.setVisibility(recipe.getCategory().isEmpty() ? View.GONE : View.VISIBLE);
-        tvDescription.setText(recipe.getDescription().isEmpty()
-                ? getString(R.string.no_description)
-                : recipe.getDescription());
-        tvIngredients.setText(recipe.getFormattedIngredients().isEmpty()
-                ? getString(R.string.no_ingredients)
-                : formatBullets(recipe.getFormattedIngredients()));
-        tvSteps.setText(recipe.getSteps().isEmpty()
-                ? getString(R.string.no_steps)
-                : formatSteps(recipe.getSteps()));
-
-        if (recipe.getCreatedAt() > 0) {
-            tvDate.setText(new SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-                    .format(new Date(recipe.getCreatedAt())));
+        // Hide edit and delete option if user doesn't own it
+        String recipeUserId = recipe.getUserId();
+        if (currentUser == null || (!TextUtils.isEmpty(recipeUserId) && !currentUser.getUid().equals(recipeUserId))) {
+            toolbar.getMenu().findItem(R.id.action_edit).setVisible(false);
+            toolbar.getMenu().findItem(R.id.action_delete).setVisible(false);
         }
 
-        btnDelete.setOnClickListener(v -> confirmDelete());
-    }
-
-    private String formatBullets(String text) {
-        StringBuilder builder = new StringBuilder();
-        String[] lines = text.split("\\r?\\n");
-        for (String line : lines) {
-            String cleaned = line.trim();
-            if (cleaned.isEmpty()) {
-                continue;
-            }
-            if (builder.length() > 0) {
-                builder.append("\n");
-            }
-            builder.append("• ").append(cleaned);
+        // Load image using Coil
+        ImageView ivRecipeCover = findViewById(R.id.ivRecipeCover);
+        if (!TextUtils.isEmpty(recipe.getImageUrl())) {
+            ImageRequest request = new ImageRequest.Builder(this)
+                .data(recipe.getImageUrl())
+                .target(ivRecipeCover)
+                .build();
+            Coil.imageLoader(this).enqueue(request);
+        } else {
+            // fallback generic image if needed, or just let scrim cover it
+            ivRecipeCover.setBackgroundColor(getResources().getColor(android.R.color.black, getTheme()));
         }
-        return builder.toString();
     }
 
-    private String formatSteps(String text) {
-        StringBuilder builder = new StringBuilder();
-        String[] lines = text.split("\\r?\\n");
-        int step = 1;
-        for (String line : lines) {
-            String cleaned = line.trim();
-            if (cleaned.isEmpty()) {
-                continue;
-            }
-            if (builder.length() > 0) {
-                builder.append("\n\n");
-            }
-            builder.append(step).append(". ")
-                    .append(cleaned.replaceFirst("^[\\-•*\\d.)\\s]+", "").trim());
-            step++;
+    private void loadUserAllergensAndSetupPager() {
+        if (currentUser == null) {
+            setupViewPagerAndTabs();
+            return;
         }
-        return builder.length() == 0 ? text : builder.toString();
+
+        db.collection("users").document(currentUser.getUid()).get()
+          .addOnSuccessListener(documentSnapshot -> {
+              if (documentSnapshot.exists()) {
+                  User user = documentSnapshot.toObject(User.class);
+                  if (user != null && user.getAllergens() != null) {
+                      userAllergens.addAll(user.getAllergens());
+                  }
+              }
+              checkAllergens();
+              setupViewPagerAndTabs();
+          })
+          .addOnFailureListener(e -> {
+              setupViewPagerAndTabs(); // setup anyway
+          });
     }
 
-    private void confirmDelete() {
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.delete)
+    private void checkAllergens() {
+        if (userAllergens.isEmpty() || recipe.getAllergens().isEmpty()) return;
+
+        List<String> matchingAllergens = new ArrayList<>();
+        for (String userAllergen : userAllergens) {
+            for (String recipeAllergen : recipe.getAllergens()) {
+                if (userAllergen.equalsIgnoreCase(recipeAllergen)) {
+                    matchingAllergens.add(recipeAllergen);
+                }
+            }
+        }
+
+        if (!matchingAllergens.isEmpty()) {
+            MaterialCardView cardAllergy = findViewById(R.id.cardAllergyWarning);
+            TextView tvAllergyWarning = findViewById(R.id.tvAllergyWarning);
+            cardAllergy.setVisibility(View.VISIBLE);
+            String allergensText = TextUtils.join(", ", matchingAllergens);
+            tvAllergyWarning.setText(getString(R.string.allergy_contains, allergensText));
+        }
+    }
+
+    private void setupViewPagerAndTabs() {
+        ViewPager2 viewPager = findViewById(R.id.viewPager);
+        TabLayout tabLayout = findViewById(R.id.tabLayout);
+
+        RecipeDetailPagerAdapter pagerAdapter = new RecipeDetailPagerAdapter(this, recipe, userAllergens);
+        viewPager.setAdapter(pagerAdapter);
+
+        String[] tabTitles = {
+            getString(R.string.tab_ingredients),
+            getString(R.string.tab_steps),
+            getString(R.string.tab_notes)
+        };
+
+        new TabLayoutMediator(tabLayout, viewPager,
+                (tab, position) -> tab.setText(tabTitles[position])
+        ).attach();
+    }
+
+    private void setupFAB() {
+        ExtendedFloatingActionButton fab = findViewById(R.id.fabAddToCookbook);
+        fab.setOnClickListener(v -> {
+            CookbookPickerBottomSheet bottomSheet = CookbookPickerBottomSheet.newInstance(recipe);
+            bottomSheet.show(getSupportFragmentManager(), "CookbookPickerBottomSheet");
+        });
+        
+        // Hide FAB if scrolling down
+        ViewPager2 viewPager = findViewById(R.id.viewPager);
+        // Note: ViewPager2 doesn't directly expose scroll for FAB hide, 
+        // usually done inside the Fragment's RecyclerView scroll listener.
+    }
+
+    private void shareRecipe() {
+        String deepLink = "recipebook://recipe/" + recipe.getId();
+        String shareText = recipe.getTitle() + "\n\n" + deepLink;
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, shareText);
+        startActivity(Intent.createChooser(intent, getString(R.string.share_recipe)));
+    }
+
+    private void toggleLike(MenuItem item) {
+        if (currentUser == null) return;
+        isLiked = !isLiked;
+        item.setIcon(isLiked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+        // In a real app, you would add the user's UID to a 'likes' subcollection
+        // and increment the recipe's like count atomically.
+        String message = isLiked ? getString(R.string.liked) : "Beğeni geri alındı";
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void showDeleteDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.delete_recipe)
                 .setMessage(R.string.confirm_delete)
                 .setPositiveButton(R.string.delete, (dialog, which) -> deleteRecipe())
                 .setNegativeButton(R.string.cancel, null)
@@ -125,27 +247,14 @@ public class RecipeDetailActivity extends BaseActivity {
     }
 
     private void deleteRecipe() {
-        if (TextUtils.isEmpty(recipe.getId())) {
-            return;
-        }
-        progressIndicator.setVisibility(View.VISIBLE);
-        btnDelete.setEnabled(false);
-        db.collection("recipes").document(recipe.getId()).delete()
-                .addOnCompleteListener(task -> {
-                    progressIndicator.setVisibility(View.GONE);
-                    btnDelete.setEnabled(true);
-                    if (task.isSuccessful()) {
-                        Snackbar.make(rootView, R.string.recipe_deleted, Snackbar.LENGTH_SHORT)
-                                .addCallback(new Snackbar.Callback() {
-                                    @Override
-                                    public void onDismissed(Snackbar transientBottomBar, int event) {
-                                        finish();
-                                    }
-                                })
-                                .show();
-                    } else {
-                        Snackbar.make(rootView, R.string.recipe_delete_failed, Snackbar.LENGTH_SHORT).show();
-                    }
-                });
+        db.collection("recipes").document(recipe.getId())
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(RecipeDetailActivity.this, R.string.recipe_deleted, Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> 
+                    Toast.makeText(RecipeDetailActivity.this, R.string.recipe_delete_failed, Toast.LENGTH_SHORT).show()
+                );
     }
 }

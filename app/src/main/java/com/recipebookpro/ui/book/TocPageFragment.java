@@ -53,17 +53,15 @@ public class TocPageFragment extends Fragment {
             }
         }
 
-        MaterialTextView tvCount = view.findViewById(R.id.tvTocCount);
-        RecyclerView rvTocPage = view.findViewById(R.id.rvTocPage);
-        rvTocPage.setLayoutManager(new LinearLayoutManager(requireContext()));
-        rvTocPage.setNestedScrollingEnabled(false);
-        tvCount.setText(getString(R.string.recipe_count_label, recipes.size()));
+        RecyclerView rvToc = view.findViewById(R.id.rvToc);
+        rvToc.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvToc.setNestedScrollingEnabled(false);
 
         TocItemAdapter adapter = new TocItemAdapter(recipes, position -> {
             if (getActivity() instanceof BookReaderActivity) {
                 ((BookReaderActivity) getActivity()).goToRecipePage(position);
             }
         });
-        rvTocPage.setAdapter(adapter);
+        rvToc.setAdapter(adapter);
     }
 }

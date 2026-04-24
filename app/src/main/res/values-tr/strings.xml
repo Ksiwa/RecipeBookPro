@@ -128,4 +128,110 @@
         <item>tutam</item>
         <item>@string/unit_pack</item>
     </string-array>
+
+    <!-- Allergen tags -->
+    <string-array name="allergen_tags">
+        <item>Gluten</item>
+        <item>Süt Ürünleri</item>
+        <item>Yumurta</item>
+        <item>Fındık/Kuruyemiş</item>
+        <item>Soya</item>
+        <item>Deniz Ürünleri</item>
+        <item>Susam</item>
+        <item>Kereviz</item>
+    </string-array>
+
+    <!-- Cooking Mode -->
+    <string name="cooking_mode_title">Pişirme Modu</string>
+    <string name="cooking_mode_start">Pişirme Modunu Başlat</string>
+    <string name="next_step">Sonraki Adım</string>
+    <string name="previous_step">Önceki Adım</string>
+    <string name="repeat_step">Tekrar</string>
+    <string name="start_timer">Zamanlayıcıyı Başlat</string>
+    <string name="stop">Durdur</string>
+    <string name="timer_finished">Zamanlayıcı tamamlandı!</string>
+    <string name="step_of">Adım %1$d / %2$d</string>
+    <string name="timer_format">%02d:%02d</string>
+    <string name="listening">Dinleniyor…</string>
+    <string name="voice_command_hint">Söyleyin: "sonraki adım", "önceki", "tekrar", "zamanlayıcı başlat", "durdur"</string>
+    <string name="mic_permission_denied">Mikrofon izni reddedildi. Sesli komutlar kullanılamıyor.</string>
+    <string name="tts_init_failed">Metin okuma başlatılamadı.</string>
+
+    <!-- Allergens / Warnings -->
+    <string name="allergy_warning">Alerji Uyarısı</string>
+    <string name="allergy_contains">Bu tarif hassas olduğunuz alerjenleri içeriyor: %1$s</string>
+    <string name="allergens_label">Alerjenler</string>
+
+    <!-- Recipe Detail Tabs -->
+    <string name="tab_ingredients">Malzemeler</string>
+    <string name="tab_steps">Adımlar</string>
+    <string name="tab_notes">Notlar</string>
+    <string name="servings">Porsiyon</string>
+    <string name="scale_servings">Porsiyonu Ayarla</string>
+    <string name="servings_format">%1$d porsiyon</string>
+    <string name="notes_hint">Kişisel notlarınızı buraya ekleyin…</string>
+    <string name="note_saved">Not kaydedildi.</string>
+    <string name="note_save_failed">Not kaydedilemedi.</string>
+
+    <!-- Sharing -->
+    <string name="share_recipe">Tarifi Paylaş</string>
+    <string name="like">Beğen</string>
+    <string name="liked">Beğenildi</string>
+
+    <!-- Cookbook / Collections -->
+    <string name="add_to_cookbook">Deftere Ekle</string>
+    <string name="recipe_copied">Tarif defterinize eklendi.</string>
+    <string name="select_cookbook">Defter Seçin</string>
+
+    <!-- Ingredient Filter -->
+    <string name="ingredient_filter_title">Malzemeye Göre Ara</string>
+    <string name="ingredient_search_hint">Malzeme ara…</string>
+    <string name="match_percent">%%%1$d eşleşme</string>
+    <string name="add_to_shopping">Alışveriş Listesine Ekle</string>
+    <string name="missing_ingredients">Eksik: %1$s</string>
+
+    <!-- Nutrition -->
+    <string name="nutrition_title">Besin Değerleri</string>
+    <string name="nutrition_disclaimer">Tahmini değerler — Gemini AI</string>
+    <string name="nutrition_load_failed">Besin değerleri yüklenemedi.</string>
+    <string name="calories">Kalori</string>
+    <string name="protein">Protein</string>
+    <string name="fat">Yağ</string>
+    <string name="carbs">Karbonhidrat</string>
+    <string name="fiber">Lif</string>
+    <string name="sodium">Sodyum</string>
+    <string name="kcal_unit">kcal</string>
+    <string name="gram_unit">g</string>
+    <string name="mg_unit">mg</string>
+
+    <!-- Unit Converter -->
+    <string name="unit_converter_title">Birim Dönüştürücü</string>
+    <string name="convert">Dönüştür</string>
+    <string name="swap_units">Birimleri Değiştir</string>
+    <string name="source_unit">Kaynak Birim</string>
+    <string name="target_unit">Hedef Birim</string>
+    <string name="enter_amount">Miktar girin</string>
+
+    <!-- Recipe Add/Edit -->
+    <string name="edit_recipe">Tarifi Düzenle</string>
+    <string name="update_recipe">Tarifi Güncelle</string>
+    <string name="add_step">Adım Ekle</string>
+    <string name="step_description">Adım açıklaması</string>
+    <string name="timer_minutes">Zamanlayıcı (dakika)</string>
+    <string name="add_photo">Fotoğraf Ekle</string>
+    <string name="take_photo">Fotoğraf Çek</string>
+    <string name="choose_from_gallery">Galeriden Seç</string>
+    <string name="total_time_minutes">Toplam Süre (dakika)</string>
+    <string name="recipe_image">Tarif Görseli</string>
+    <string name="step_number">Adım %1$d</string>
+    <string name="drag_to_reorder">Sıralamak için sürükleyin</string>
+    <string name="swipe_to_delete">Silmek için kaydırın</string>
+
+    <!-- General -->
+    <string name="error_generic">Bir sorun oluştu. Lütfen tekrar deneyin.</string>
+    <string name="permission_required">İzin gerekli</string>
+    <string name="per_serving">porsiyon başına</string>
+    <string name="nutrition_analysis">Besin Analizi</string>
+    <string name="unit_converter">Birim Dönüştürücü</string>
+    <string name="nutrition_info_desc">Yapay zeka tarafından tahmin edilen 1 porsiyonluk değerler.</string>
 </resources>

@@ -9,7 +9,6 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textview.MaterialTextView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -18,6 +17,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.recipebookpro.R;
+import com.recipebookpro.model.Cookbook;
 import com.recipebookpro.model.Recipe;
 
 import java.util.ArrayList;
@@ -27,15 +27,17 @@ import java.util.List;
 
 public class BookReaderActivity extends BaseActivity {
 
-    private MaterialTextView tvToolbarTitle;
-    private MaterialTextView tvToolbarSubtitle;
+    public static final String EXTRA_COOKBOOK_ID = "EXTRA_COOKBOOK_ID";
+    public static final String EXTRA_COOKBOOK_NAME = "EXTRA_COOKBOOK_NAME";
+
     private ViewPager2 viewPager;
-    private MaterialTextView tvPageIndicator;
     private MaterialTextView tvEmpty;
-    private CircularProgressIndicator progressBar;
+    private android.widget.ProgressBar progressBar;
     private final List<Recipe> recipeList = new ArrayList<>();
     private String userIdentity = "";
     private View rootView;
+    private String filterCookbookId;
+    private String filterCookbookName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,17 +47,17 @@ public class BookReaderActivity extends BaseActivity {
         applyInsetsToView(findViewById(R.id.bookReaderRoot));
 
         rootView = findViewById(R.id.bookReaderRoot);
-        MaterialToolbar toolbar = findViewById(R.id.toolbarBook);
-        tvToolbarTitle = findViewById(R.id.tvToolbarTitle);
-        tvToolbarSubtitle = findViewById(R.id.tvToolbarSubtitle);
-        MaterialButton btnToolbarToc = findViewById(R.id.btnToolbarToc);
-        viewPager = findViewById(R.id.viewPager);
-        tvPageIndicator = findViewById(R.id.tvPageIndicator);
+        android.widget.ImageButton btnBack = findViewById(R.id.btnBookBack);
+        android.widget.ImageButton btnToc = findViewById(R.id.btnBookToc);
+        viewPager = findViewById(R.id.viewPagerBook);
         tvEmpty = findViewById(R.id.tvBookEmpty);
         progressBar = findViewById(R.id.progressBook);
 
-        toolbar.setNavigationOnClickListener(v -> finish());
-        btnToolbarToc.setOnClickListener(v -> goToToc());
+        filterCookbookId = getIntent().getStringExtra(EXTRA_COOKBOOK_ID);
+        filterCookbookName = getIntent().getStringExtra(EXTRA_COOKBOOK_NAME);
+
+        btnBack.setOnClickListener(v -> finish());
+        btnToc.setOnClickListener(v -> goToToc());
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
@@ -67,7 +69,7 @@ public class BookReaderActivity extends BaseActivity {
         viewPager.setClipToPadding(false);
         viewPager.setClipChildren(false);
         viewPager.setOffscreenPageLimit(3);
-        viewPager.setPageTransformer(new BookPageTransformer());
+        viewPager.setPageTransformer(new NotebookPageTransformer());
 
         View pagerChild = viewPager.getChildAt(0);
         if (pagerChild instanceof RecyclerView) {
@@ -96,22 +98,44 @@ public class BookReaderActivity extends BaseActivity {
 
         showLoading();
 
+        if (filterCookbookId != null) {
+            FirebaseFirestore.getInstance().collection("cookbooks").document(filterCookbookId)
+                .get().addOnSuccessListener(doc -> {
+                    Cookbook book = Cookbook.fromDocument(doc);
+                    List<String> ids = book.getRecipeIds();
+                    if (ids == null || ids.isEmpty()) {
+                        onLoaded();
+                        return;
+                    }
+                    fetchAllRecipesAndFilter(user.getUid(), ids);
+                }).addOnFailureListener(e -> {
+                    hideLoading();
+                    showEmpty();
+                });
+        } else {
+            fetchAllRecipesAndFilter(user.getUid(), null);
+        }
+    }
+
+    private void fetchAllRecipesAndFilter(String uid, List<String> allowedIds) {
         FirebaseFirestore.getInstance()
                 .collection("recipes")
-                .whereEqualTo("userId", user.getUid())
+                .whereEqualTo("userId", uid)
                 .orderBy("createdAt", Query.Direction.ASCENDING)
                 .get()
                 .addOnSuccessListener(snap -> {
                     recipeList.clear();
                     for (QueryDocumentSnapshot doc : snap) {
-                        recipeList.add(Recipe.fromDocument(doc));
+                        if (allowedIds == null || allowedIds.contains(doc.getId())) {
+                            recipeList.add(Recipe.fromDocument(doc));
+                        }
                     }
                     onLoaded();
                 })
                 .addOnFailureListener(e -> {
                     String message = e.getMessage() != null ? e.getMessage() : "";
                     if (message.contains("FAILED_PRECONDITION") || message.contains("index")) {
-                        loadFallback(user.getUid());
+                        loadFallback(uid, allowedIds);
                     } else {
                         hideLoading();
                         showEmpty();
@@ -120,7 +144,7 @@ public class BookReaderActivity extends BaseActivity {
                 });
     }
 
-    private void loadFallback(String uid) {
+    private void loadFallback(String uid, List<String> allowedIds) {
         FirebaseFirestore.getInstance()
                 .collection("recipes")
                 .whereEqualTo("userId", uid)
@@ -128,7 +152,9 @@ public class BookReaderActivity extends BaseActivity {
                 .addOnSuccessListener(snap -> {
                     recipeList.clear();
                     for (QueryDocumentSnapshot doc : snap) {
-                        recipeList.add(Recipe.fromDocument(doc));
+                        if (allowedIds == null || allowedIds.contains(doc.getId())) {
+                            recipeList.add(Recipe.fromDocument(doc));
+                        }
                     }
                     Collections.sort(recipeList, Comparator.comparingLong(Recipe::getCreatedAt));
                     onLoaded();
@@ -159,35 +185,13 @@ public class BookReaderActivity extends BaseActivity {
     }
 
     private void updateIndicator(int position) {
-        if (position == 0) {
-            tvPageIndicator.setText(R.string.cover);
-            tvToolbarTitle.setText(R.string.my_recipe_book);
-            tvToolbarSubtitle.setText(R.string.cover_page_label);
-            return;
-        }
-
-        if (position == 1) {
-            tvPageIndicator.setText(R.string.table_of_contents);
-            tvToolbarTitle.setText(R.string.table_of_contents);
-            tvToolbarSubtitle.setText(getString(R.string.recipe_count_label, recipeList.size()));
-            return;
-        }
-
-        int absolutePage = position + 1;
-        int totalPages = recipeList.size() + 2;
-        Recipe recipe = recipeList.get(position - 2);
-        tvPageIndicator.setText(getString(R.string.page_number, absolutePage, totalPages));
-        tvToolbarTitle.setText(recipe.getTitle());
-        tvToolbarSubtitle.setText(getString(R.string.recipe_page_label, absolutePage));
+        // No-op. Page specific indicators are in the fragments.
     }
 
     private void showLoading() {
         progressBar.setVisibility(View.VISIBLE);
         viewPager.setVisibility(View.GONE);
         tvEmpty.setVisibility(View.GONE);
-        tvPageIndicator.setVisibility(View.GONE);
-        tvToolbarTitle.setText(R.string.my_recipe_book);
-        tvToolbarSubtitle.setText(R.string.loading);
     }
 
     private void hideLoading() {
@@ -197,14 +201,10 @@ public class BookReaderActivity extends BaseActivity {
     private void showEmpty() {
         tvEmpty.setVisibility(View.VISIBLE);
         viewPager.setVisibility(View.GONE);
-        tvPageIndicator.setVisibility(View.GONE);
-        tvToolbarTitle.setText(R.string.my_recipe_book);
-        tvToolbarSubtitle.setText(R.string.no_recipes_in_book);
     }
 
     private void showPager() {
         viewPager.setVisibility(View.VISIBLE);
-        tvPageIndicator.setVisibility(View.VISIBLE);
         tvEmpty.setVisibility(View.GONE);
     }
 }

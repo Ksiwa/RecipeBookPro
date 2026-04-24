@@ -55,7 +55,6 @@ public class RecipePageFragment extends Fragment {
         MaterialTextView tvCategory = view.findViewById(R.id.tvPageCategory);
         MaterialTextView tvDescLabel = view.findViewById(R.id.tvPageDescLabel);
         MaterialTextView tvDesc = view.findViewById(R.id.tvPageDesc);
-        View descDivider = view.findViewById(R.id.viewDescDivider);
         MaterialTextView tvIngredients = view.findViewById(R.id.tvPageIngredients);
         MaterialTextView tvSteps = view.findViewById(R.id.tvPageSteps);
         MaterialTextView tvPageNum = view.findViewById(R.id.tvPageNum);
@@ -67,7 +66,6 @@ public class RecipePageFragment extends Fragment {
 
         if (TextUtils.isEmpty(recipe.getDescription())) {
             tvDescLabel.setVisibility(View.GONE);
-            descDivider.setVisibility(View.GONE);
             tvDesc.setVisibility(View.GONE);
         } else {
             tvDesc.setText(recipe.getDescription());

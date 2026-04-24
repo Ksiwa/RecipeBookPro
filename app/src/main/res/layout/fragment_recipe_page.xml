@@ -1,21 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="10dp">
+    android:padding="0dp">
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bg_book_paper_page"
+        android:background="@drawable/bg_plain_paper"
         android:elevation="8dp">
-
-        <View
-            android:layout_width="2dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="52dp"
-            android:background="@color/book_margin_line" />
 
         <FrameLayout
             android:id="@+id/stickerLayer"
@@ -30,9 +23,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingStart="72dp"
+            android:paddingStart="24dp"
             android:paddingEnd="24dp"
-            android:paddingTop="34dp"
+            android:paddingTop="50dp"
             android:paddingBottom="58dp"
             android:scrollbars="none">
 
@@ -45,110 +38,87 @@
                     android:id="@+id/tvPageTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="104dp"
-                    android:fontFamily="serif"
-                    android:lineSpacingExtra="6dp"
-                    android:textColor="@color/book_ink"
-                    android:textSize="29sp"
+                    android:fontFamily="@font/great_vibes"
+                    android:gravity="center"
+                    android:textColor="#111111"
+                    android:textSize="48sp"
                     android:textStyle="bold" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tvPageCategory"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
                     android:layout_marginTop="8dp"
                     android:background="@drawable/bg_book_cover_label"
-                    android:paddingHorizontal="12dp"
+                    android:paddingHorizontal="16dp"
                     android:paddingVertical="4dp"
-                    android:textColor="@color/book_cover_title"
-                    android:textSize="12sp" />
+                    android:fontFamily="@font/indie_flower"
+                    android:textColor="#555555"
+                    android:textSize="18sp" />
 
                 <View
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="10dp"
-                    android:layout_marginBottom="14dp"
-                    android:background="@color/book_rule_line" />
+                    android:layout_height="2dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="#33000000" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tvPageDescLabel"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="cursive"
+                    android:fontFamily="@font/great_vibes"
                     android:text="@string/recipe_note_label"
-                    android:textColor="@color/book_accent"
-                    android:textSize="17sp" />
-
-                <View
-                    android:id="@+id/viewDescDivider"
-                    android:layout_width="42dp"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="6dp"
-                    android:layout_marginBottom="8dp"
-                    android:background="@color/book_accent_soft" />
+                    android:textColor="#AA0000"
+                    android:textSize="28sp" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tvPageDesc"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="24dp"
-                    android:fontFamily="serif"
-                    android:lineSpacingExtra="5dp"
-                    android:textColor="@color/book_note_ink"
-                    android:textSize="15sp"
-                    android:textStyle="italic" />
+                    android:fontFamily="@font/indie_flower"
+                    android:textColor="#333333"
+                    android:textSize="20sp" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="serif"
+                    android:fontFamily="@font/great_vibes"
                     android:text="@string/ingredients"
-                    android:textColor="@color/book_section_title"
-                    android:textSize="18sp"
+                    android:textColor="#005500"
+                    android:textSize="32sp"
                     android:textStyle="bold" />
-
-                <View
-                    android:layout_width="58dp"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="6dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="@color/book_accent" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tvPageIngredients"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="28dp"
-                    android:fontFamily="serif"
-                    android:lineSpacingExtra="8dp"
-                    android:textColor="@color/book_body_ink"
-                    android:textSize="15sp" />
+                    android:fontFamily="@font/indie_flower"
+                    android:lineSpacingExtra="4dp"
+                    android:textColor="#111111"
+                    android:textSize="20sp" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="serif"
+                    android:fontFamily="@font/great_vibes"
                     android:text="@string/steps"
-                    android:textColor="@color/book_section_title"
-                    android:textSize="18sp"
+                    android:textColor="#0000AA"
+                    android:textSize="32sp"
                     android:textStyle="bold" />
-
-                <View
-                    android:layout_width="58dp"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="6dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="@color/book_accent" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tvPageSteps"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="18dp"
-                    android:fontFamily="serif"
-                    android:lineSpacingExtra="9dp"
-                    android:textColor="@color/book_body_ink"
-                    android:textSize="15sp" />
+                    android:fontFamily="@font/indie_flower"
+                    android:lineSpacingExtra="4dp"
+                    android:textColor="#111111"
+                    android:textSize="20sp" />
 
             </LinearLayout>
 
@@ -161,10 +131,10 @@
             android:layout_gravity="bottom|end"
             android:layout_marginEnd="22dp"
             android:layout_marginBottom="14dp"
-            android:fontFamily="serif"
-            android:textColor="@color/book_page_number"
-            android:textSize="13sp"
-            android:textStyle="italic" />
+            android:fontFamily="@font/indie_flower"
+            android:textColor="#555555"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
     </FrameLayout>
 

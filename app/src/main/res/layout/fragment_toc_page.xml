@@ -1,88 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="10dp">
+    android:padding="0dp">
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bg_book_paper_page"
+        android:background="@drawable/bg_plain_paper"
         android:elevation="8dp">
-
-        <View
-            android:layout_width="2dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="52dp"
-            android:background="@color/book_margin_line" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:paddingStart="72dp"
+            android:paddingStart="24dp"
             android:paddingEnd="24dp"
-            android:paddingTop="34dp"
-            android:paddingBottom="24dp">
-
-            <com.google.android.material.textview.MaterialTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="cursive"
-                android:text="@string/toc_chapter_label"
-                android:textColor="@color/book_accent"
-                android:textSize="18sp" />
+            android:paddingTop="60dp"
+            android:paddingBottom="58dp">
 
             <com.google.android.material.textview.MaterialTextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:fontFamily="serif"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/great_vibes"
+                android:gravity="center"
                 android:text="@string/table_of_contents"
-                android:textColor="@color/book_ink"
-                android:textSize="28sp"
+                android:textColor="#111111"
+                android:textSize="48sp"
                 android:textStyle="bold" />
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/tvTocCount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="@color/book_note_ink"
-                android:textSize="13sp"
-                android:textStyle="italic" />
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="14dp"
-                android:layout_marginBottom="18dp"
-                android:background="@color/book_rule_line" />
+                android:layout_height="2dp"
+                android:layout_marginBottom="16dp"
+                android:background="#33000000" />
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvTocPage"
+                android:id="@+id/rvToc"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:clipToPadding="false"
-                android:paddingBottom="16dp"
-                android:scrollbars="none" />
-
+                android:paddingBottom="20dp" />
         </LinearLayout>
 
-        <com.google.android.material.textview.MaterialTextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_marginEnd="22dp"
-            android:layout_marginBottom="14dp"
-            android:fontFamily="serif"
-            android:text="2"
-            android:textColor="@color/book_page_number"
-            android:textSize="13sp"
-            android:textStyle="italic" />
-
     </FrameLayout>
-
 </FrameLayout>
