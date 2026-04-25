@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/nav_cover">
+
+    <fragment
+        android:id="@+id/nav_cover"
+        android:name="com.recipebookpro.ui.book.CoverPageFragment"
+        android:label="@string/app_name" />
+
+    <fragment
+        android:id="@+id/nav_contents"
+        android:name="com.recipebookpro.ui.book.TocPageFragment"
+        android:label="@string/table_of_contents" />
+
+    <fragment
+        android:id="@+id/nav_recipe"
+        android:name="com.recipebookpro.ui.book.RecipePageFragment"
+        android:label="@string/view_details" />
+</navigation>

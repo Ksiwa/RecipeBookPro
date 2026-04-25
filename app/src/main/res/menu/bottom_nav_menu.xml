@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_cover"
+        android:icon="@drawable/ic_book_open"
+        android:title="@string/cover" />
+    <item
+        android:id="@+id/nav_contents"
+        android:icon="@drawable/ic_toc"
+        android:title="@string/table_of_contents" />
+    <item
+        android:id="@+id/nav_recipe"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:title="@string/view_details" />
+</menu>
