@@ -44,7 +44,7 @@ public class StickerSelectorBottomSheet extends BottomSheetDialogFragment {
         
         rv.setLayoutManager(new GridLayoutManager(getContext(), 3));
 
-        updateStickerList(rv, "all");
+        fetchAndShowStickers(rv, "all");
 
         chipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (checkedIds.isEmpty()) return;
@@ -57,34 +57,61 @@ public class StickerSelectorBottomSheet extends BottomSheetDialogFragment {
             else if (id == R.id.chipTools) category = "tools_equipment";
             else if (id == R.id.chipVegetable) category = "vegetable";
             
-            updateStickerList(rv, category);
+            fetchAndShowStickers(rv, category);
         });
     }
 
-    private void updateStickerList(RecyclerView rv, String category) {
-        List<String> stickerUrls = generateStickerUrls(category);
-        StickerAdapter adapter = new StickerAdapter(stickerUrls, url -> {
-            if (listener != null) {
-                listener.onStickerSelected(url);
-            }
-            dismiss();
-        });
-        rv.setAdapter(adapter);
-    }
-
-    private List<String> generateStickerUrls(String filter) {
-        List<String> urls = new ArrayList<>();
-        String baseUrl = "https://raw.githubusercontent.com/zeyynepp0/PhotoshopExtension_Images/main/";
-        
-        String[] categories = {"dessert", "drink", "food", "ornamental", "tools_equipment", "vegetable"};
-        
-        for (String cat : categories) {
-            if (!filter.equals("all") && !filter.equals(cat)) continue;
+    private void fetchAndShowStickers(RecyclerView rv, String category) {
+        new Thread(() -> {
+            List<String> allUrls = new ArrayList<>();
+            String[] categories = {"dessert", "drink", "food", "ornamental", "tools_equipment", "vegetable"};
             
-            for (int id = 0; id <= 250; id++) {
-                urls.add(baseUrl + cat + "/PhotoshopExtension_Image_" + id + ".png");
+            for (String cat : categories) {
+                if (!category.equals("all") && !category.equals(cat)) continue;
+                
+                try {
+                    java.net.URL url = new java.net.URL("https://api.github.com/repos/zeyynepp0/PhotoshopExtension_Images/contents/" + cat);
+                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setRequestProperty("Accept", "application/json");
+                    
+                    if (conn.getResponseCode() == 200) {
+                        java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
+                        StringBuilder sb = new StringBuilder();
+                        String line;
+                        while ((line = br.readLine()) != null) sb.append(line);
+                        
+                        org.json.JSONArray arr = new org.json.JSONArray(sb.toString());
+                        for (int i = 0; i < arr.length(); i++) {
+                            org.json.JSONObject obj = arr.getJSONObject(i);
+                            String name = obj.getString("name");
+                            if (name.endsWith(".png")) {
+                                allUrls.add("https://raw.githubusercontent.com/zeyynepp0/PhotoshopExtension_Images/main/" + cat + "/" + name);
+                            }
+                        }
+                    }
+                    conn.disconnect();
+                } catch (Exception e) {
+                    // Fallback for this category if API fails
+                    for (int id = 0; id <= 250; id++) {
+                        allUrls.add("https://raw.githubusercontent.com/zeyynepp0/PhotoshopExtension_Images/main/" + cat + "/PhotoshopExtension_Image_" + id + ".png");
+                        allUrls.add("https://raw.githubusercontent.com/zeyynepp0/PhotoshopExtension_Images/main/" + cat + "/PhotoshopExtension_Image (" + id + ").png");
+                    }
+                }
             }
-        }
-        return urls;
+            
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    StickerAdapter adapter = new StickerAdapter(allUrls, imageUrl -> {
+                        if (listener != null) {
+                            listener.onStickerSelected(imageUrl);
+                        }
+                        dismiss();
+                    });
+                    rv.setAdapter(adapter);
+                });
+            }
+        }).start();
     }
+
 }
