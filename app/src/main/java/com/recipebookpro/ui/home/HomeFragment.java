@@ -149,7 +149,6 @@ public class HomeFragment extends Fragment implements RecipeAdapter.OnRecipeClic
 
         recipeListener = db.collection("recipes")
                 .whereEqualTo("userId", currentUser.getUid())
-                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .addSnapshotListener((snapshots, error) -> {
                     showLoading(false);
                     if (error != null || snapshots == null) {
@@ -168,6 +167,10 @@ public class HomeFragment extends Fragment implements RecipeAdapter.OnRecipeClic
                             allRecipes.add(Recipe.fromDocument(doc));
                         }
                     }
+                    
+                    // Local sort to avoid Firestore index requirement
+                    java.util.Collections.sort(allRecipes, (r1, r2) -> Long.compare(r2.getCreatedAt(), r1.getCreatedAt()));
+                    
                     applyFilter();
                 });
     }
