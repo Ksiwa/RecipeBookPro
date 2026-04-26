@@ -13,13 +13,16 @@ public class BookPagerAdapter extends FragmentStateAdapter {
 
     private final List<Recipe> recipes;
     private final String userIdentity;
+    private final String cookbookId;
 
     public BookPagerAdapter(@NonNull FragmentActivity activity,
                             List<Recipe> recipes,
-                            String userIdentity) {
+                            String userIdentity,
+                            String cookbookId) {
         super(activity);
         this.recipes = recipes;
         this.userIdentity = userIdentity;
+        this.cookbookId = cookbookId;
     }
 
     @NonNull
@@ -33,6 +36,7 @@ public class BookPagerAdapter extends FragmentStateAdapter {
         }
         return RecipePageFragment.newInstance(
                 recipes.get(position - 2),
+                cookbookId,
                 position + 1,
                 recipes.size() + 2
         );

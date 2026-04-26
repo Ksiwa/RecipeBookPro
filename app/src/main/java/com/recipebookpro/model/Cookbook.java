@@ -6,7 +6,9 @@ import com.google.firebase.firestore.PropertyName;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Cookbook implements Serializable {
 
@@ -22,6 +24,7 @@ public class Cookbook implements Serializable {
     private List<String> followerIds;
     private int followerCount;
     private List<String> recipeIds;
+    private Map<String, List<StickerModel>> recipeStickers;
     private long createdAt;
 
     public Cookbook() {
@@ -29,6 +32,7 @@ public class Cookbook implements Serializable {
         tags = new ArrayList<>();
         collaboratorIds = new ArrayList<>();
         followerIds = new ArrayList<>();
+        recipeStickers = new HashMap<>();
     }
 
     public Cookbook(String userId, String name) {
@@ -64,8 +68,51 @@ public class Cookbook implements Serializable {
             if (book.getFollowerIds() == null) {
                 book.setFollowerIds(new ArrayList<>());
             }
+            if (book.getRecipeStickers() == null) {
+                book.setRecipeStickers(new HashMap<>());
+            }
+            
+            // Manual parsing for nested generic map/list
+            Object rawStickers = doc.get("recipeStickers");
+            if (rawStickers instanceof Map<?, ?>) {
+                Map<String, List<StickerModel>> parsedMap = new HashMap<>();
+                Map<?, ?> rawMap = (Map<?, ?>) rawStickers;
+                for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                    String recipeId = String.valueOf(entry.getKey());
+                    parsedMap.put(recipeId, parseStickerList(entry.getValue()));
+                }
+                book.setRecipeStickers(parsedMap);
+            }
         }
         return book;
+    }
+
+    private static List<StickerModel> parseStickerList(Object raw) {
+        List<StickerModel> list = new ArrayList<>();
+        if (raw instanceof List<?>) {
+            for (Object item : (List<?>) raw) {
+                if (item instanceof Map<?, ?>) {
+                    Map<?, ?> map = (Map<?, ?>) item;
+                    StickerModel sticker = new StickerModel();
+                    sticker.setImageUrl(asString(map.get("imageUrl")));
+                    sticker.setX(asFloat(map.get("x")));
+                    sticker.setY(asFloat(map.get("y")));
+                    sticker.setRotation(asFloat(map.get("rotation")));
+                    sticker.setScale(asFloat(map.get("scale")));
+                    list.add(sticker);
+                }
+            }
+        }
+        return list;
+    }
+
+    private static float asFloat(Object value) {
+        if (value instanceof Number) return ((Number) value).floatValue();
+        return 0f;
+    }
+
+    private static String asString(Object value) {
+        return value == null ? "" : String.valueOf(value).trim();
     }
 
     @Exclude
@@ -165,5 +212,13 @@ public class Cookbook implements Serializable {
 
     public void setCreatedAt(long createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Map<String, List<StickerModel>> getRecipeStickers() {
+        return recipeStickers == null ? new HashMap<>() : recipeStickers;
+    }
+
+    public void setRecipeStickers(Map<String, List<StickerModel>> recipeStickers) {
+        this.recipeStickers = recipeStickers;
     }
 }

@@ -19,6 +19,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.recipebookpro.R;
 import com.recipebookpro.model.Cookbook;
 import com.recipebookpro.model.Recipe;
+import com.recipebookpro.ui.recipe.StickerSelectorBottomSheet;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +39,9 @@ public class BookReaderActivity extends BaseActivity {
     private View rootView;
     private String filterCookbookId;
     private String filterCookbookName;
+    private android.widget.LinearLayout layoutEditActions;
+    private android.widget.LinearLayout layoutNormalActions;
+    private boolean isEditMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,8 +60,19 @@ public class BookReaderActivity extends BaseActivity {
         filterCookbookId = getIntent().getStringExtra(EXTRA_COOKBOOK_ID);
         filterCookbookName = getIntent().getStringExtra(EXTRA_COOKBOOK_NAME);
 
+        layoutNormalActions = findViewById(R.id.layoutNormalRoot);
+        layoutEditActions = findViewById(R.id.layoutEditActions);
+
         btnBack.setOnClickListener(v -> finish());
         btnToc.setOnClickListener(v -> goToToc());
+        
+        android.view.View btnEdit = findViewById(R.id.btnBookStickers);
+        btnEdit.setVisibility(View.GONE); // Default hidden until authorized
+        btnEdit.setOnClickListener(v -> toggleEditMode(true));
+        
+        findViewById(R.id.btnEditCancel).setOnClickListener(v -> toggleEditMode(false));
+        findViewById(R.id.btnEditAdd).setOnClickListener(v -> showStickerSelector());
+        findViewById(R.id.btnEditSave).setOnClickListener(v -> saveEdits());
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
@@ -77,10 +92,6 @@ public class BookReaderActivity extends BaseActivity {
         }
 
         loadRecipes();
-    }
-
-    public void goToRecipePage(int recipeIndex) {
-        viewPager.setCurrentItem(recipeIndex + 2, true);
     }
 
     public void goToToc() {
@@ -103,6 +114,12 @@ public class BookReaderActivity extends BaseActivity {
                 .get().addOnSuccessListener(doc -> {
                     Cookbook book = Cookbook.fromDocument(doc);
                     
+                    // Yetki kontrolü: Sahip mi yoksa Ortak Çalışan mı?
+                    boolean isAuthorized = user.getUid().equals(book.getUserId()) || 
+                                           (book.getCollaboratorIds() != null && book.getCollaboratorIds().contains(user.getUid()));
+                    
+                    findViewById(R.id.btnBookStickers).setVisibility(isAuthorized ? View.VISIBLE : View.GONE);
+
                     // Defter sahibinin adını getir
                     FirebaseFirestore.getInstance().collection("users").document(book.getUserId())
                         .get().addOnSuccessListener(userDoc -> {
@@ -137,6 +154,8 @@ public class BookReaderActivity extends BaseActivity {
                     showEmpty();
                 });
         } else {
+            // Belirli bir defter yoksa (Tüm Tariflerim), kullanıcı yetkilidir
+            findViewById(R.id.btnBookStickers).setVisibility(View.VISIBLE);
             fetchAllRecipesAndFilter(user.getUid(), null);
         }
     }
@@ -205,14 +224,12 @@ public class BookReaderActivity extends BaseActivity {
         }
 
         showPager();
-        viewPager.setAdapter(new BookPagerAdapter(this, recipeList, userIdentity));
-        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageSelected(int position) {
-                updateIndicator(position);
-            }
-        });
-        updateIndicator(0);
+        viewPager.setAdapter(new BookPagerAdapter(this, recipeList, userIdentity, filterCookbookId));
+    }
+
+    public void goToRecipePage(int position) {
+        // +2 because of Cover and TOC pages
+        viewPager.setCurrentItem(position + 2, true);
     }
 
     private void updateIndicator(int position) {
@@ -237,5 +254,37 @@ public class BookReaderActivity extends BaseActivity {
     private void showPager() {
         viewPager.setVisibility(View.VISIBLE);
         tvEmpty.setVisibility(View.GONE);
+    }
+
+    private void toggleEditMode(boolean enabled) {
+        this.isEditMode = enabled;
+        layoutNormalActions.setVisibility(enabled ? View.GONE : View.VISIBLE);
+        layoutEditActions.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        viewPager.setUserInputEnabled(!enabled); // Disable swiping in edit mode
+
+        // Tell the current fragment to enable/disable editing
+        androidx.fragment.app.Fragment currentFrag = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
+        if (currentFrag instanceof RecipePageFragment) {
+            ((RecipePageFragment) currentFrag).setEditMode(enabled);
+        }
+    }
+
+    private void saveEdits() {
+        androidx.fragment.app.Fragment currentFrag = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
+        if (currentFrag instanceof RecipePageFragment) {
+            ((RecipePageFragment) currentFrag).performSave();
+        }
+        toggleEditMode(false);
+    }
+
+    private void showStickerSelector() {
+        StickerSelectorBottomSheet bottomSheet = new StickerSelectorBottomSheet();
+        bottomSheet.setOnStickerSelectedListener(imageUrl -> {
+            androidx.fragment.app.Fragment currentFrag = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
+            if (currentFrag instanceof RecipePageFragment) {
+                ((RecipePageFragment) currentFrag).addSticker(imageUrl);
+            }
+        });
+        bottomSheet.show(getSupportFragmentManager(), "StickerSelector");
     }
 }

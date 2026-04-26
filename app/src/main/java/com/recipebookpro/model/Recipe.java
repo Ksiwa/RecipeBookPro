@@ -28,12 +28,14 @@ public class Recipe implements Serializable {
     private List<String> allergens;         // allergen tags
     private List<String> ingredientNames;   // flat name list for search
     private String sourceRecipeId;           // original recipe ID if copied
+    private List<StickerModel> stickers;    // decoration stickers
 
     public Recipe() {
         ingredients = new ArrayList<>();
         stepList = new ArrayList<>();
         allergens = new ArrayList<>();
         ingredientNames = new ArrayList<>();
+        stickers = new ArrayList<>();
     }
 
     public Recipe(String id,
@@ -115,6 +117,10 @@ public class Recipe implements Serializable {
             recipe.setSteps(stepsStr);
             recipe.setStepList(parseStepsFromString(stepsStr));
         }
+
+        // Parse stickers
+        Object rawStickers = document.get("stickers");
+        recipe.setStickers(parseStickers(rawStickers));
 
         return recipe;
     }
@@ -214,6 +220,32 @@ public class Recipe implements Serializable {
             }
         }
         return list;
+    }
+
+    private static List<StickerModel> parseStickers(Object raw) {
+        List<StickerModel> list = new ArrayList<>();
+        if (raw instanceof List<?>) {
+            for (Object item : (List<?>) raw) {
+                if (item instanceof Map<?, ?>) {
+                    Map<?, ?> map = (Map<?, ?>) item;
+                    StickerModel sticker = new StickerModel();
+                    sticker.setImageUrl(asString(map.get("imageUrl")));
+                    sticker.setX(asFloat(map.get("x")));
+                    sticker.setY(asFloat(map.get("y")));
+                    sticker.setRotation(asFloat(map.get("rotation")));
+                    sticker.setScale(asFloat(map.get("scale")));
+                    list.add(sticker);
+                }
+            }
+        }
+        return list;
+    }
+
+    private static float asFloat(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).floatValue();
+        }
+        return 0f;
     }
 
     private static String asString(Object value) {
@@ -385,6 +417,14 @@ public class Recipe implements Serializable {
 
     public void setSourceRecipeId(String sourceRecipeId) {
         this.sourceRecipeId = sourceRecipeId;
+    }
+
+    public List<StickerModel> getStickers() {
+        return stickers == null ? new ArrayList<>() : stickers;
+    }
+
+    public void setStickers(List<StickerModel> stickers) {
+        this.stickers = stickers != null ? stickers : new ArrayList<>();
     }
 
     // ========================== Ingredient Inner Class ==========================
