@@ -6,6 +6,8 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.recipebookpro.BuildConfig;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -16,9 +18,9 @@ public class GeminiService {
 
     // LÜTFEN KENDİ GEMINI API KEY'İNİZİ BURAYA GİRİN:
     // https://aistudio.google.com/ adresinden ücretsiz alabilirsiniz.
-    private static final String API_KEY = "YOUR_GEMINI_API_KEY";
+    private static final String API_KEY = BuildConfig.GEMINI_API_KEY;
     
-    private static final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + API_KEY;
+    private static final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + API_KEY;
 
     public interface GeminiCallback {
         void onSuccess(String result);

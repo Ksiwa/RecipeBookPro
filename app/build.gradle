@@ -3,9 +3,19 @@ plugins {
     id 'com.google.gms.google-services'
 }
 
+def localProps = new Properties()
+def localPropsFile = rootProject.file('local.properties')
+if (localPropsFile.exists()) {
+    localProps.load(new FileInputStream(localPropsFile))
+}
+
 android {
     namespace 'com.recipebookpro'
     compileSdk 36
+
+    buildFeatures {
+        buildConfig true
+    }
 
     defaultConfig {
         applicationId "com.recipebookpro"
@@ -13,6 +23,8 @@ android {
         targetSdk 36
         versionCode 1
         versionName "1.0"
+        
+        buildConfigField "String", "GEMINI_API_KEY", "\"${localProps.getProperty('GEMINI_API_KEY', 'YOUR_GEMINI_API_KEY')}\""
     }
 
     compileOptions {
