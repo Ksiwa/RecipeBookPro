@@ -77,6 +77,44 @@
             android:theme="@style/Theme.RecipeBookPro.NoActionBar"
             android:windowSoftInputMode="adjustResize|stateHidden" />
 
+        <activity
+            android:name=".ui.kitchen.CookbookDetailActivity"
+            android:exported="true"
+            android:theme="@style/Theme.RecipeBookPro.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="recipebook" android:host="cookbook" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.kitchen.CookbookAddEditActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RecipeBookPro.NoActionBar"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
+
+        <activity
+            android:name=".ui.kitchen.PublicProfileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RecipeBookPro.NoActionBar" />
+
+        <activity
+            android:name=".ui.shopping.ShoppingListDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RecipeBookPro.NoActionBar" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>

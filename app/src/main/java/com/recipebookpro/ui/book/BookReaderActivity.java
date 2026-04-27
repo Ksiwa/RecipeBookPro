@@ -13,17 +13,23 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textview.MaterialTextView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.recipebookpro.R;
 import com.recipebookpro.model.Cookbook;
 import com.recipebookpro.model.Recipe;
+import com.recipebookpro.ui.recipe.StickerSelectorBottomSheet;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class BookReaderActivity extends BaseActivity {
 
@@ -34,10 +40,14 @@ public class BookReaderActivity extends BaseActivity {
     private MaterialTextView tvEmpty;
     private android.widget.ProgressBar progressBar;
     private final List<Recipe> recipeList = new ArrayList<>();
-    private String userIdentity = "";
+    private String userIdentity = "Kullanıcı";
     private View rootView;
     private String filterCookbookId;
     private String filterCookbookName;
+    private java.util.Map<String, java.util.List<String>> recipeToCookbookMap = new java.util.HashMap<>();
+    private android.widget.LinearLayout layoutEditActions;
+    private android.widget.LinearLayout layoutNormalActions;
+    private boolean isEditMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,8 +66,22 @@ public class BookReaderActivity extends BaseActivity {
         filterCookbookId = getIntent().getStringExtra(EXTRA_COOKBOOK_ID);
         filterCookbookName = getIntent().getStringExtra(EXTRA_COOKBOOK_NAME);
 
+        layoutNormalActions = findViewById(R.id.layoutNormalRoot);
+        layoutEditActions = findViewById(R.id.layoutEditActions);
+
         btnBack.setOnClickListener(v -> finish());
         btnToc.setOnClickListener(v -> goToToc());
+        
+        android.view.View btnEdit = findViewById(R.id.btnBookStickers);
+        btnEdit.setVisibility(View.GONE); // Default hidden until authorized
+        btnEdit.setOnClickListener(v -> toggleEditMode(true));
+        
+        findViewById(R.id.btnEditCancel).setOnClickListener(v -> {
+            toggleEditMode(false);
+            android.widget.Toast.makeText(this, "Düzenleme iptal edildi", android.widget.Toast.LENGTH_SHORT).show();
+        });
+        findViewById(R.id.btnEditAdd).setOnClickListener(v -> showStickerSelector());
+        findViewById(R.id.btnEditSave).setOnClickListener(v -> saveEdits());
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
@@ -79,10 +103,6 @@ public class BookReaderActivity extends BaseActivity {
         loadRecipes();
     }
 
-    public void goToRecipePage(int recipeIndex) {
-        viewPager.setCurrentItem(recipeIndex + 2, true);
-    }
-
     public void goToToc() {
         if (viewPager.getVisibility() == View.VISIBLE) {
             viewPager.setCurrentItem(1, true);
@@ -102,68 +122,124 @@ public class BookReaderActivity extends BaseActivity {
             FirebaseFirestore.getInstance().collection("cookbooks").document(filterCookbookId)
                 .get().addOnSuccessListener(doc -> {
                     Cookbook book = Cookbook.fromDocument(doc);
-                    List<String> ids = book.getRecipeIds();
-                    if (ids == null || ids.isEmpty()) {
-                        onLoaded();
-                        return;
-                    }
-                    fetchAllRecipesAndFilter(user.getUid(), ids);
+                    
+                    // Yetki kontrolü: Sahip mi yoksa Ortak Çalışan mı?
+                    boolean isAuthorized = user.getUid().equals(book.getUserId()) || 
+                                           (book.getCollaboratorIds() != null && book.getCollaboratorIds().contains(user.getUid()));
+                    
+                    findViewById(R.id.btnBookStickers).setVisibility(isAuthorized ? View.VISIBLE : View.GONE);
+
+                    // Defter sahibinin adını getir
+                    FirebaseFirestore.getInstance().collection("users").document(book.getUserId())
+                        .get().addOnSuccessListener(userDoc -> {
+                            if (userDoc.exists()) {
+                                String ownerName = userDoc.getString("displayName");
+                                if (ownerName == null || ownerName.trim().isEmpty()) {
+                                    ownerName = userDoc.getString("email");
+                                }
+                                if (ownerName != null) {
+                                    userIdentity = ownerName;
+                                }
+                            }
+                            
+                            List<String> ids = book.getRecipeIds();
+                            if (ids == null || ids.isEmpty()) {
+                                onLoaded();
+                                return;
+                            }
+                            fetchAllRecipesAndFilter(user.getUid(), ids);
+                        }).addOnFailureListener(e -> {
+                            // Kullanıcı çekilemezse mevcut isimle devam et
+                            List<String> ids = book.getRecipeIds();
+                            if (ids == null || ids.isEmpty()) {
+                                onLoaded();
+                                return;
+                            }
+                            fetchAllRecipesAndFilter(user.getUid(), ids);
+                        });
+
                 }).addOnFailureListener(e -> {
                     hideLoading();
                     showEmpty();
                 });
         } else {
+            // Belirli bir defter yoksa (Tüm Tariflerim), kullanıcı yetkilidir
+            findViewById(R.id.btnBookStickers).setVisibility(View.VISIBLE);
             fetchAllRecipesAndFilter(user.getUid(), null);
         }
     }
 
     private void fetchAllRecipesAndFilter(String uid, List<String> allowedIds) {
-        FirebaseFirestore.getInstance()
-                .collection("recipes")
-                .whereEqualTo("userId", uid)
-                .orderBy("createdAt", Query.Direction.ASCENDING)
-                .get()
-                .addOnSuccessListener(snap -> {
-                    recipeList.clear();
-                    for (QueryDocumentSnapshot doc : snap) {
-                        if (allowedIds == null || allowedIds.contains(doc.getId())) {
-                            recipeList.add(Recipe.fromDocument(doc));
+        if (allowedIds == null || allowedIds.isEmpty()) {
+            // "Tümü" modu: Önce tüm tarifleri çek, sonra defter eşleşmelerini bul
+            FirebaseFirestore.getInstance().collection("recipes")
+                    .whereEqualTo("userId", uid)
+                    .get()
+                    .addOnSuccessListener(recipeSnap -> {
+                        recipeList.clear();
+                        for (QueryDocumentSnapshot rDoc : recipeSnap) {
+                            recipeList.add(Recipe.fromDocument(rDoc));
                         }
-                    }
-                    onLoaded();
-                })
-                .addOnFailureListener(e -> {
-                    String message = e.getMessage() != null ? e.getMessage() : "";
-                    if (message.contains("FAILED_PRECONDITION") || message.contains("index")) {
-                        loadFallback(uid, allowedIds);
-                    } else {
+
+                        // Şimdi defterleri çekip eşleştirme yapalım (Süslemeler için)
+                        FirebaseFirestore.getInstance().collection("cookbooks")
+                                .whereEqualTo("userId", uid)
+                                .get()
+                                .addOnSuccessListener(cookbookSnap -> {
+                                    recipeToCookbookMap.clear();
+                                    for (QueryDocumentSnapshot cbDoc : cookbookSnap) {
+                                        Cookbook book = Cookbook.fromDocument(cbDoc);
+                                        if (book.getRecipeIds() != null) {
+                                            for (String rid : book.getRecipeIds()) {
+                                                List<String> books = recipeToCookbookMap.get(rid);
+                                                if (books == null) {
+                                                    books = new ArrayList<>();
+                                                    recipeToCookbookMap.put(rid, books);
+                                                }
+                                                if (!books.contains(book.getId())) {
+                                                    books.add(book.getId());
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Collections.sort(recipeList, (r1, r2) -> Long.compare(r1.getCreatedAt(), r2.getCreatedAt()));
+                                    onLoaded();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Collections.sort(recipeList, (r1, r2) -> Long.compare(r1.getCreatedAt(), r2.getCreatedAt()));
+                                    onLoaded();
+                                });
+                    })
+                    .addOnFailureListener(e -> {
                         hideLoading();
                         showEmpty();
-                        Snackbar.make(rootView, R.string.recipes_load_failed, Snackbar.LENGTH_LONG).show();
-                    }
-                });
-    }
+                    });
+            return;
+        }
 
-    private void loadFallback(String uid, List<String> allowedIds) {
-        FirebaseFirestore.getInstance()
-                .collection("recipes")
-                .whereEqualTo("userId", uid)
-                .get()
-                .addOnSuccessListener(snap -> {
-                    recipeList.clear();
-                    for (QueryDocumentSnapshot doc : snap) {
-                        if (allowedIds == null || allowedIds.contains(doc.getId())) {
-                            recipeList.add(Recipe.fromDocument(doc));
-                        }
-                    }
-                    Collections.sort(recipeList, Comparator.comparingLong(Recipe::getCreatedAt));
-                    onLoaded();
-                })
-                .addOnFailureListener(e -> {
-                    hideLoading();
-                    showEmpty();
-                    Snackbar.make(rootView, R.string.recipes_load_failed, Snackbar.LENGTH_LONG).show();
-                });
+        // Defter görünümü: Sadece izin verilen ID'leri getir
+        recipeList.clear();
+        List<com.google.android.gms.tasks.Task<QuerySnapshot>> tasks = new ArrayList<>();
+        for (int i = 0; i < allowedIds.size(); i += 10) {
+            List<String> chunk = allowedIds.subList(i, Math.min(allowedIds.size(), i + 10));
+            tasks.add(FirebaseFirestore.getInstance().collection("recipes")
+                    .whereIn(FieldPath.documentId(), chunk)
+                    .get());
+        }
+
+        com.google.android.gms.tasks.Tasks.whenAllSuccess(tasks).addOnSuccessListener(results -> {
+            for (Object result : results) {
+                QuerySnapshot snap = (QuerySnapshot) result;
+                for (DocumentSnapshot doc : snap.getDocuments()) {
+                    recipeList.add(Recipe.fromDocument(doc));
+                }
+            }
+            Collections.sort(recipeList, (r1, r2) -> Long.compare(r1.getCreatedAt(), r2.getCreatedAt()));
+            onLoaded();
+        }).addOnFailureListener(e -> {
+            hideLoading();
+            showEmpty();
+        });
     }
 
     private void onLoaded() {
@@ -174,14 +250,12 @@ public class BookReaderActivity extends BaseActivity {
         }
 
         showPager();
-        viewPager.setAdapter(new BookPagerAdapter(this, recipeList, userIdentity));
-        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageSelected(int position) {
-                updateIndicator(position);
-            }
-        });
-        updateIndicator(0);
+        viewPager.setAdapter(new BookPagerAdapter(this, recipeList, userIdentity, filterCookbookId, recipeToCookbookMap));
+    }
+
+    public void goToRecipePage(int position) {
+        // +2 because of Cover and TOC pages
+        viewPager.setCurrentItem(position + 2, true);
     }
 
     private void updateIndicator(int position) {
@@ -206,5 +280,41 @@ public class BookReaderActivity extends BaseActivity {
     private void showPager() {
         viewPager.setVisibility(View.VISIBLE);
         tvEmpty.setVisibility(View.GONE);
+    }
+
+    private void toggleEditMode(boolean enabled) {
+        this.isEditMode = enabled;
+        layoutNormalActions.setVisibility(enabled ? View.GONE : View.VISIBLE);
+        layoutEditActions.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        viewPager.setUserInputEnabled(!enabled); // Disable swiping in edit mode
+
+        // Tell the current fragment to enable/disable editing
+        androidx.fragment.app.Fragment currentFrag = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
+        if (currentFrag instanceof RecipePageFragment) {
+            ((RecipePageFragment) currentFrag).setEditMode(enabled);
+        }
+    }
+
+    private void saveEdits() {
+        androidx.fragment.app.Fragment currentFrag = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
+        if (currentFrag instanceof RecipePageFragment) {
+            ((RecipePageFragment) currentFrag).performSave(() -> {
+                toggleEditMode(false);
+                android.widget.Toast.makeText(this, "Değişiklikler kaydedildi", android.widget.Toast.LENGTH_SHORT).show();
+            });
+        } else {
+            toggleEditMode(false);
+        }
+    }
+
+    private void showStickerSelector() {
+        StickerSelectorBottomSheet bottomSheet = new StickerSelectorBottomSheet();
+        bottomSheet.setOnStickerSelectedListener(imageUrl -> {
+            androidx.fragment.app.Fragment currentFrag = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
+            if (currentFrag instanceof RecipePageFragment) {
+                ((RecipePageFragment) currentFrag).addSticker(imageUrl);
+            }
+        });
+        bottomSheet.show(getSupportFragmentManager(), "StickerSelector");
     }
 }

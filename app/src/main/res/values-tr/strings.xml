@@ -126,6 +126,7 @@
         <item>tatli kasigi</item>
         <item>cay kasigi</item>
         <item>tutam</item>
+        <item>dilim</item>
         <item>@string/unit_pack</item>
     </string-array>
 
@@ -234,4 +235,12 @@
     <string name="nutrition_analysis">Besin Analizi</string>
     <string name="unit_converter">Birim Dönüştürücü</string>
     <string name="nutrition_info_desc">Yapay zeka tarafından tahmin edilen 1 porsiyonluk değerler.</string>
+
+    <string name="add_custom">Özel Ekle</string>
+    <string name="add_custom_allergen">Özel Alerjen Ekle</string>
+    <string name="allergen_name">Alerjen Adı</string>
+    <string name="permission_denied_camera">Kamera izni verilmedi. Fotoğraf çekmek için izne ihtiyaç var.</string>
+    <string name="permission_denied_gallery">Galeri izni verilmedi.</string>
+    <string name="camera_error">Kamera açılamadı</string>
+    <string name="no_cookbooks_found">Henüz bir defteriniz yok</string>
 </resources>

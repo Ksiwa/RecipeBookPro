@@ -14,6 +14,7 @@
 
     <!-- Sabit ikonlar: Toolbar yerine sayfanın üzerindeymiş gibi -->
     <LinearLayout
+        android:id="@+id/layoutNormalRoot"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -32,12 +33,60 @@
         <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
         
         <ImageButton
+            android:id="@+id/btnBookStickers"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_edit"
+            app:tint="#444444"
+            android:layout_marginEnd="16dp" />
+            
+        <ImageButton
             android:id="@+id/btnBookToc"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_list"
             app:tint="#444444" />
+    </LinearLayout>
+
+    <!-- Düzenleme Modu Kontrolleri -->
+    <LinearLayout
+        android:id="@+id/layoutEditActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="24dp"
+        android:paddingHorizontal="24dp"
+        android:elevation="11dp"
+        android:visibility="gone">
+        
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEditCancel"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Vazgeç"
+            app:icon="@drawable/ic_close" />
+            
+        <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEditAdd"
+            style="@style/Widget.Material3.Button.ElevatedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sticker"
+            app:icon="@drawable/ic_add"
+            android:layout_marginEnd="8dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEditSave"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Kaydet"
+            app:icon="@drawable/ic_check" />
     </LinearLayout>
 
     <ProgressBar

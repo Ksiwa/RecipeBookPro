@@ -27,12 +27,15 @@ public class Recipe implements Serializable {
     private int likes;                      // like counter
     private List<String> allergens;         // allergen tags
     private List<String> ingredientNames;   // flat name list for search
+    private String sourceRecipeId;           // original recipe ID if copied
+    private List<StickerModel> stickers;    // decoration stickers
 
     public Recipe() {
         ingredients = new ArrayList<>();
         stepList = new ArrayList<>();
         allergens = new ArrayList<>();
         ingredientNames = new ArrayList<>();
+        stickers = new ArrayList<>();
     }
 
     public Recipe(String id,
@@ -80,6 +83,7 @@ public class Recipe implements Serializable {
         }
 
         Object publicVal = document.get("isPublic");
+        if (publicVal == null) publicVal = document.get("public");
         if (publicVal instanceof Boolean) {
             recipe.setPublic((Boolean) publicVal);
         }
@@ -91,6 +95,9 @@ public class Recipe implements Serializable {
 
         // Parse allergens
         recipe.setAllergens(parseStringList(document.get("allergens")));
+
+        // Parse sourceRecipeId
+        recipe.setSourceRecipeId(asString(document.get("sourceRecipeId")));
 
         // Parse ingredientNames
         recipe.setIngredientNames(parseStringList(document.get("ingredientNames")));
@@ -110,6 +117,10 @@ public class Recipe implements Serializable {
             recipe.setSteps(stepsStr);
             recipe.setStepList(parseStepsFromString(stepsStr));
         }
+
+        // Parse stickers
+        Object rawStickers = document.get("stickers");
+        recipe.setStickers(parseStickers(rawStickers));
 
         return recipe;
     }
@@ -209,6 +220,32 @@ public class Recipe implements Serializable {
             }
         }
         return list;
+    }
+
+    private static List<StickerModel> parseStickers(Object raw) {
+        List<StickerModel> list = new ArrayList<>();
+        if (raw instanceof List<?>) {
+            for (Object item : (List<?>) raw) {
+                if (item instanceof Map<?, ?>) {
+                    Map<?, ?> map = (Map<?, ?>) item;
+                    StickerModel sticker = new StickerModel();
+                    sticker.setImageUrl(asString(map.get("imageUrl")));
+                    sticker.setX(asFloat(map.get("x")));
+                    sticker.setY(asFloat(map.get("y")));
+                    sticker.setRotation(asFloat(map.get("rotation")));
+                    sticker.setScale(asFloat(map.get("scale")));
+                    list.add(sticker);
+                }
+            }
+        }
+        return list;
+    }
+
+    private static float asFloat(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).floatValue();
+        }
+        return 0f;
     }
 
     private static String asString(Object value) {
@@ -340,10 +377,12 @@ public class Recipe implements Serializable {
         this.servings = servings;
     }
 
+    @com.google.firebase.firestore.PropertyName("isPublic")
     public boolean isPublic() {
         return isPublic;
     }
 
+    @com.google.firebase.firestore.PropertyName("isPublic")
     public void setPublic(boolean isPublic) {
         this.isPublic = isPublic;
     }
@@ -370,6 +409,22 @@ public class Recipe implements Serializable {
 
     public void setIngredientNames(List<String> ingredientNames) {
         this.ingredientNames = ingredientNames != null ? ingredientNames : new ArrayList<>();
+    }
+
+    public String getSourceRecipeId() {
+        return sourceRecipeId == null ? "" : sourceRecipeId;
+    }
+
+    public void setSourceRecipeId(String sourceRecipeId) {
+        this.sourceRecipeId = sourceRecipeId;
+    }
+
+    public List<StickerModel> getStickers() {
+        return stickers == null ? new ArrayList<>() : stickers;
+    }
+
+    public void setStickers(List<StickerModel> stickers) {
+        this.stickers = stickers != null ? stickers : new ArrayList<>();
     }
 
     // ========================== Ingredient Inner Class ==========================

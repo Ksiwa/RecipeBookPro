@@ -7,6 +7,7 @@
     android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarAddEdit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -19,12 +20,14 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/nsvAddEdit"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         android:padding="16dp"
-        android:paddingBottom="140dp"
-        android:clipToPadding="false">
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:isScrollContainer="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -97,6 +100,21 @@
                     android:layout_height="wrap_content"
                     android:text="@string/choose_from_gallery" />
             </LinearLayout>
+
+            <!-- Cookbook Selection -->
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/select_cookbook"
+                android:layout_marginBottom="16dp"
+                app:startIconDrawable="@drawable/ic_book">
+                <AutoCompleteTextView
+                    android:id="@+id/actvCookbook"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Basic Info -->
             <com.google.android.material.textfield.TextInputLayout
@@ -171,8 +189,17 @@
                 android:id="@+id/cgAllergens"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="8dp"
                 app:singleSelection="false" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddCustomAllergen"
+                style="@style/Widget.Material3.Button.TextButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/add_custom"
+                app:icon="@drawable/ic_add"
+                android:layout_marginBottom="24dp" />
 
             <!-- Ingredients -->
             <com.google.android.material.textview.MaterialTextView
@@ -222,35 +249,32 @@
                 android:layout_gravity="center_horizontal"
                 android:text="@string/add_step"
                 app:icon="@drawable/ic_add"
-                android:layout_marginBottom="48dp" />
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="24dp"
+                android:paddingBottom="24dp">
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/progressSave"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="16dp"
+                    android:visibility="gone"
+                    android:indeterminate="true" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSave"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="@string/save_recipe" />
+            </LinearLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
-    <!-- Bottom Save Area -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="?attr/colorSurface"
-        android:elevation="8dp"
-        android:orientation="horizontal"
-        android:padding="16dp">
-
-        <com.google.android.material.progressindicator.CircularProgressIndicator
-            android:id="@+id/progressSave"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginEnd="16dp"
-            android:visibility="gone"
-            android:indeterminate="true" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSave"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="@string/save_recipe" />
-    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

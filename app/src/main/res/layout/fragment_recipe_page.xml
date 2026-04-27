@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="0dp">
@@ -9,15 +10,6 @@
         android:layout_height="match_parent"
         android:background="@drawable/bg_plain_paper"
         android:elevation="8dp">
-
-        <FrameLayout
-            android:id="@+id/stickerLayer"
-            android:layout_width="120dp"
-            android:layout_height="96dp"
-            android:layout_gravity="top|end"
-            android:layout_marginTop="28dp"
-            android:layout_marginEnd="18dp"
-            android:background="@android:color/transparent" />
 
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
@@ -29,98 +21,141 @@
             android:paddingBottom="58dp"
             android:scrollbars="none">
 
-            <LinearLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:layout_height="wrap_content">
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/tvPageTitle"
+                <LinearLayout
+                    android:id="@+id/layoutContent"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/great_vibes"
-                    android:gravity="center"
-                    android:textColor="#111111"
-                    android:textSize="48sp"
-                    android:textStyle="bold" />
+                    android:orientation="vertical"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/tvPageCategory"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_book_cover_label"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="4dp"
-                    android:fontFamily="@font/indie_flower"
-                    android:textColor="#555555"
-                    android:textSize="18sp" />
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="2dp"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginBottom="16dp"
-                    android:background="#33000000" />
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/tvPageTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/great_vibes"
+                            android:gravity="center"
+                            android:textColor="#111111"
+                            android:textSize="48sp"
+                            android:textStyle="bold" />
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/tvPageDescLabel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/great_vibes"
-                    android:text="@string/recipe_note_label"
-                    android:textColor="#AA0000"
-                    android:textSize="28sp" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSelectDesign"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:layout_gravity="end|top"
+                            android:layout_marginTop="8dp"
+                            android:insetLeft="0dp"
+                            android:insetTop="0dp"
+                            android:insetRight="0dp"
+                            android:insetBottom="0dp"
+                            android:visibility="gone"
+                            app:icon="@drawable/ic_book"
+                            app:iconGravity="textStart"
+                            app:iconPadding="0dp"
+                            app:iconTint="#D1A15A" />
+                    </FrameLayout>
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/tvPageDesc"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
-                    android:fontFamily="@font/indie_flower"
-                    android:textColor="#333333"
-                    android:textSize="20sp" />
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/tvPageCategory"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_book_cover_label"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="4dp"
+                        android:fontFamily="@font/indie_flower"
+                        android:textColor="#555555"
+                        android:textSize="18sp" />
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/great_vibes"
-                    android:text="@string/ingredients"
-                    android:textColor="#005500"
-                    android:textSize="32sp"
-                    android:textStyle="bold" />
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="2dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="16dp"
+                        android:background="#33000000" />
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/tvPageIngredients"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="28dp"
-                    android:fontFamily="@font/indie_flower"
-                    android:lineSpacingExtra="4dp"
-                    android:textColor="#111111"
-                    android:textSize="20sp" />
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/tvPageDescLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/great_vibes"
+                        android:text="@string/recipe_note_label"
+                        android:textColor="#AA0000"
+                        android:textSize="28sp" />
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/great_vibes"
-                    android:text="@string/steps"
-                    android:textColor="#0000AA"
-                    android:textSize="32sp"
-                    android:textStyle="bold" />
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/tvPageDesc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="24dp"
+                        android:fontFamily="@font/indie_flower"
+                        android:textColor="#333333"
+                        android:textSize="20sp" />
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/tvPageSteps"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="18dp"
-                    android:fontFamily="@font/indie_flower"
-                    android:lineSpacingExtra="4dp"
-                    android:textColor="#111111"
-                    android:textSize="20sp" />
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/great_vibes"
+                        android:text="@string/ingredients"
+                        android:textColor="#005500"
+                        android:textSize="32sp"
+                        android:textStyle="bold" />
 
-            </LinearLayout>
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/tvPageIngredients"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="28dp"
+                        android:fontFamily="@font/indie_flower"
+                        android:lineSpacingExtra="4dp"
+                        android:textColor="#111111"
+                        android:textSize="20sp" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/great_vibes"
+                        android:text="@string/steps"
+                        android:textColor="#0000AA"
+                        android:textSize="32sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/tvPageSteps"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="18dp"
+                        android:fontFamily="@font/indie_flower"
+                        android:lineSpacingExtra="4dp"
+                        android:textColor="#111111"
+                        android:textSize="20sp" />
+
+                </LinearLayout>
+
+                <FrameLayout
+                    android:id="@+id/stickerCanvas"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:elevation="20dp"
+                    app:layout_constraintTop_toTopOf="@id/layoutContent"
+                    app:layout_constraintBottom_toBottomOf="@id/layoutContent"
+                    app:layout_constraintStart_toStartOf="@id/layoutContent"
+                    app:layout_constraintEnd_toEndOf="@id/layoutContent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
         </androidx.core.widget.NestedScrollView>
 

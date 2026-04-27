@@ -25,7 +25,12 @@ import com.recipebookpro.R;
 import com.recipebookpro.model.Recipe;
 import com.recipebookpro.model.User;
 import com.recipebookpro.ui.BaseActivity;
+import com.recipebookpro.ui.kitchen.CollectionPickerBottomSheet;
 import com.recipebookpro.ui.recipe.adapter.RecipeDetailPagerAdapter;
+import androidx.work.Data;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
+import com.recipebookpro.worker.MergeIngredientsWorker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,6 +123,12 @@ public class RecipeDetailActivity extends BaseActivity {
                 return true;
             } else if (itemId == R.id.action_delete) {
                 showDeleteDialog();
+                return true;
+            } else if (itemId == R.id.action_add_shopping) {
+                addToShoppingList();
+                return true;
+            } else if (itemId == R.id.action_add_collection) {
+                addToCollection();
                 return true;
             }
             return false;
@@ -220,10 +231,15 @@ public class RecipeDetailActivity extends BaseActivity {
 
     private void shareRecipe() {
         String deepLink = "recipebook://recipe/" + recipe.getId();
-        String shareText = recipe.getTitle() + "\n\n" + deepLink;
+        StringBuilder sb = new StringBuilder();
+        sb.append(recipe.getTitle());
+        if (!recipe.getDescription().isEmpty()) {
+            sb.append("\n").append(recipe.getDescription());
+        }
+        sb.append("\n\n").append(deepLink);
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
-        intent.putExtra(Intent.EXTRA_TEXT, shareText);
+        intent.putExtra(Intent.EXTRA_TEXT, sb.toString());
         startActivity(Intent.createChooser(intent, getString(R.string.share_recipe)));
     }
 
@@ -256,5 +272,30 @@ public class RecipeDetailActivity extends BaseActivity {
                 .addOnFailureListener(e -> 
                     Toast.makeText(RecipeDetailActivity.this, R.string.recipe_delete_failed, Toast.LENGTH_SHORT).show()
                 );
+    }
+
+    private void addToCollection() {
+        if (recipe == null) return;
+        CollectionPickerBottomSheet sheet = CollectionPickerBottomSheet.newInstance(recipe.getId());
+        sheet.show(getSupportFragmentManager(), "CollectionPicker");
+    }
+
+    private void addToShoppingList() {
+        if (currentUser == null) return;
+        
+        String listName = recipe.getTitle() + " Alışverişi";
+        
+        Data inputData = new Data.Builder()
+            .putString(MergeIngredientsWorker.KEY_USER_ID, currentUser.getUid())
+            .putStringArray(MergeIngredientsWorker.KEY_RECIPE_IDS, new String[]{recipe.getId()})
+            .putString(MergeIngredientsWorker.KEY_LIST_NAME, listName)
+            .build();
+            
+        OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(MergeIngredientsWorker.class)
+            .setInputData(inputData)
+            .build();
+            
+        WorkManager.getInstance(this).enqueue(workRequest);
+        Toast.makeText(this, "Malzemeler alışveriş listesi olarak hazırlanıyor", Toast.LENGTH_SHORT).show();
     }
 }

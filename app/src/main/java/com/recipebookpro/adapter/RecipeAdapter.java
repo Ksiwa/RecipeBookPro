@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.widget.ImageView;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.color.MaterialColors;
 import com.google.android.material.textview.MaterialTextView;
@@ -21,6 +22,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+
+import coil.Coil;
+import coil.request.ImageRequest;
 
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder> {
 
@@ -82,6 +86,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         private final MaterialTextView tvDate;
         private final MaterialTextView tvIngredientsPreview;
         private final Chip chipCategory;
+        private final ImageView ivRecipeImage;
 
         RecipeViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -90,12 +95,27 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             tvDate = itemView.findViewById(R.id.tvRecipeDate);
             tvIngredientsPreview = itemView.findViewById(R.id.tvIngredientsPreview);
             chipCategory = itemView.findViewById(R.id.chipRecipeCategory);
+            ivRecipeImage = itemView.findViewById(R.id.ivRecipeImage);
         }
 
         void bind(Recipe recipe) {
             tvTitle.setText(recipe.getTitle());
             tvDescription.setText(recipe.getDescription());
             tvIngredientsPreview.setText(recipe.getFormattedIngredients());
+
+            if (recipe.getImageUrl() != null && !recipe.getImageUrl().isEmpty()) {
+                ivRecipeImage.setVisibility(View.VISIBLE);
+                ImageRequest request = new ImageRequest.Builder(itemView.getContext())
+                        .data(recipe.getImageUrl())
+                        .target(ivRecipeImage)
+                        .crossfade(true)
+                        .placeholder(R.drawable.ic_nav_discover)
+                        .error(R.drawable.ic_nav_discover)
+                        .build();
+                Coil.imageLoader(itemView.getContext()).enqueue(request);
+            } else {
+                ivRecipeImage.setVisibility(View.GONE);
+            }
 
             if (recipe.getCategory() == null || recipe.getCategory().trim().isEmpty()) {
                 chipCategory.setVisibility(View.GONE);

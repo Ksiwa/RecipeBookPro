@@ -50,7 +50,7 @@ public class EditableIngredientAdapter extends RecyclerView.Adapter<EditableIngr
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 holder.itemView.getContext(),
-                android.R.layout.simple_dropdown_item_1line,
+                R.layout.item_dropdown_unit,
                 units
         );
         holder.actvUnit.setAdapter(adapter);

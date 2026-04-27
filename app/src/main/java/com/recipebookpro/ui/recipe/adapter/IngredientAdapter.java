@@ -60,7 +60,7 @@ public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.Vi
              }
         }
 
-        // Allergy check
+        // Allergy check — yellow background on the entire row
         boolean hasAllergy = false;
         if (userAllergens != null && !userAllergens.isEmpty()) {
             String ingNameLower = ingredient.getName().toLowerCase();
@@ -71,8 +71,14 @@ public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.Vi
                 }
             }
         }
-        
-        holder.allergyIndicator.setVisibility(hasAllergy ? View.VISIBLE : View.GONE);
+
+        if (hasAllergy) {
+            holder.allergyIndicator.setVisibility(View.VISIBLE);
+            holder.itemView.setBackgroundColor(0xFFFFF3E0);
+        } else {
+            holder.allergyIndicator.setVisibility(View.GONE);
+            holder.itemView.setBackgroundResource(android.R.color.transparent);
+        }
     }
 
     @Override

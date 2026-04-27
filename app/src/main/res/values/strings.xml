@@ -126,6 +126,7 @@
         <item>dessert spoon</item>
         <item>teaspoon</item>
         <item>pinch</item>
+        <item>slice</item>
         <item>@string/unit_pack</item>
     </string-array>
 
@@ -234,4 +235,18 @@
     <string name="nutrition_analysis">Nutrition Analysis</string>
     <string name="unit_converter">Unit Converter</string>
     <string name="nutrition_info_desc">Estimated values calculated by AI per serving.</string>
+
+    <string name="add_custom">Add Custom</string>
+
+    <string name="add_custom_allergen">Add Custom Allergen</string>
+
+    <string name="allergen_name">Allergen Name</string>
+
+    <string name="permission_denied_camera">Camera permission denied. Permission is required to take photos.</string>
+
+    <string name="permission_denied_gallery">Gallery permission denied.</string>
+
+    <string name="camera_error">Camera could not be opened</string>
+
+    <string name="no_cookbooks_found">You do not have a cookbook yet</string>
 </resources>
