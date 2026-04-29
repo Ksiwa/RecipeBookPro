@@ -42,6 +42,22 @@
     <string name="servings">Porsiyon</string>
     <string name="add_step">Adım Ekle</string>
     <string name="add_photo">Fotoğraf Ekle</string>
+    <string name="take_photo">Fotoğraf Çek</string>
+    <string name="choose_from_gallery">Galeriden Seç</string>
+    <string name="ingredient_name">Malzeme adı</string>
+    <string name="step_description">Hazırlanış adımı</string>
+    <string name="timer_minutes">Süre (dakika)</string>
+    <string name="amount">Miktar</string>
+    <string name="unit">Birim</string>
+    <string name="unit_pack">paket</string>
+    <string name="recipe_image">Tarif Görseli</string>
+    <string name="step_number">Adım %1$d</string>
+    <string name="drag_to_reorder">Sıralamak için sürükle</string>
+    <string name="swipe_to_delete">Silmek için kaydır</string>
+    <string name="add_custom">Özel Ekle</string>
+    <string name="add_custom_allergen">Özel Alerjen Ekle</string>
+    <string name="allergen_name">Alerjen Adı</string>
+    <string name="total_time_minutes">Toplam Süre (dakika)</string>
 
     <string name="my_kitchen_title">Tarif Defterlerim</string>
     <string name="kitchen_pending_invitations">Bekleyen Davetler</string>
@@ -95,6 +111,22 @@
         <item>İçecek</item>
         <item>Salata</item>
         <item>Hamur İşi</item>
+    </string-array>
+
+    <string-array name="ingredient_units">
+        <item>adet</item>
+        <item>gram</item>
+        <item>kilogram</item>
+        <item>litre</item>
+        <item>mililitre</item>
+        <item>su bardağı</item>
+        <item>çay bardağı</item>
+        <item>yemek kaşığı</item>
+        <item>tatlı kaşığı</item>
+        <item>çay kaşığı</item>
+        <item>tutam</item>
+        <item>dilim</item>
+        <item>@string/unit_pack</item>
     </string-array>
 
     <string name="planner_title">Haftalık Yemek Planı</string>
@@ -274,11 +306,11 @@
         <item>kıyma</item>
         <item>balık</item>
     </string-array>
-    <string name="sticker_category_dessert">Tatli</string>
-    <string name="sticker_category_drink">Icecek</string>
+    <string name="sticker_category_dessert">Tatlı</string>
+    <string name="sticker_category_drink">İçecek</string>
     <string name="sticker_category_food">Yemek</string>
     <string name="sticker_category_ornamental">Süsleme</string>
-    <string name="sticker_category_tools">Arac</string>
+    <string name="sticker_category_tools">Araç</string>
     <string name="sticker_category_vegetable">Sebze</string>
     <string name="sticker">Sticker</string>
     <string name="current_password">Mevcut Şifre</string>

@@ -53,7 +53,7 @@
                 android:paddingHorizontal="14dp"
                 android:paddingVertical="6dp"
                 android:fontFamily="@font/indie_flower"
-                android:textColor="#333333"
+                android:textColor="@color/book_ink"
                 android:textSize="18sp" />
 
         </LinearLayout>

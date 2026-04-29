@@ -152,14 +152,14 @@
     </string-array>
 
     <string-array name="recipe_category_labels">
-        <item>Tatli</item>
-        <item>Ana Yemek</item>
-        <item>Corba</item>
-        <item>Kahvaltilik</item>
-        <item>Atistirmalik</item>
-        <item>Icecek</item>
-        <item>Salata</item>
-        <item>Hamur Isi</item>
+        <item>Dessert</item>
+        <item>Main Course</item>
+        <item>Soup</item>
+        <item>Breakfast</item>
+        <item>Snack</item>
+        <item>Drink</item>
+        <item>Salad</item>
+        <item>Pastry</item>
     </string-array>
 
     <string-array name="ingredient_units">

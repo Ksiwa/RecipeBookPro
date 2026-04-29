@@ -57,7 +57,7 @@ public class AddRecipeActivity extends BaseActivity {
 
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
-        categories = getResources().getStringArray(R.array.recipe_categories);
+        categories = getResources().getStringArray(R.array.recipe_category_labels);
         units = getResources().getStringArray(R.array.ingredient_units);
 
         rootView = findViewById(R.id.addRecipeRoot);
@@ -139,7 +139,8 @@ public class AddRecipeActivity extends BaseActivity {
         clearErrors();
 
         String title = getText(etTitle);
-        String category = getText(actCategory);
+        String categoryLabel = getText(actCategory);
+        String category = com.recipebookpro.util.CategoryLocalization.getCategoryValue(this, categoryLabel);
         String description = getText(etDescription);
         String steps = getText(etSteps);
         List<Recipe.Ingredient> ingredients = collectIngredients();

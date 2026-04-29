@@ -202,7 +202,7 @@ public class RecipeAddEditActivity extends BaseActivity {
         findViewById(R.id.btnGallery).setOnClickListener(v -> galleryLauncher.launch("image/*"));
         findViewById(R.id.btnAddCustomAllergen).setOnClickListener(v -> showAddCustomAllergenDialog());
 
-        String[] categories = getResources().getStringArray(R.array.recipe_categories);
+        String[] categories = getResources().getStringArray(R.array.recipe_category_labels);
         ArrayAdapter<String> catAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, categories);
         actvCategory.setAdapter(catAdapter);
 
@@ -364,7 +364,7 @@ public class RecipeAddEditActivity extends BaseActivity {
         etTitle.setText(currentRecipe.getTitle());
         etDescription.setText(currentRecipe.getDescription());
         etServings.setText(String.valueOf(currentRecipe.getServings()));
-        actvCategory.setText(currentRecipe.getCategory(), false);
+        actvCategory.setText(com.recipebookpro.util.CategoryLocalization.getDisplayName(this, currentRecipe.getCategory()), false);
 
         if (!TextUtils.isEmpty(currentRecipe.getImageUrl())) {
             ImageRequest request = new ImageRequest.Builder(this)
@@ -405,7 +405,8 @@ public class RecipeAddEditActivity extends BaseActivity {
 
         currentRecipe.setTitle(title);
         currentRecipe.setDescription(etDescription.getText() != null ? etDescription.getText().toString().trim() : "");
-        currentRecipe.setCategory(actvCategory.getText() != null ? actvCategory.getText().toString().trim() : "");
+        String selectedCategoryLabel = actvCategory.getText() != null ? actvCategory.getText().toString().trim() : "";
+        currentRecipe.setCategory(com.recipebookpro.util.CategoryLocalization.getCategoryValue(this, selectedCategoryLabel));
         
         int servings = 1;
         try {
