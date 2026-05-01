@@ -34,6 +34,7 @@ import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 import com.recipebookpro.data.worker.MergeIngredientsWorker;
+import com.recipebookpro.presentation.ui.cooking.CookingModeActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -243,16 +244,23 @@ public class RecipeDetailActivity extends BaseActivity {
     }
 
     private void setupFAB() {
-        ExtendedFloatingActionButton fab = findViewById(R.id.fabAddToCookbook);
-        fab.setOnClickListener(v -> {
+        ExtendedFloatingActionButton fabAdd = findViewById(R.id.fabAddToCookbook);
+        fabAdd.setOnClickListener(v -> {
             CookbookPickerBottomSheet bottomSheet = CookbookPickerBottomSheet.newInstance(recipe);
             bottomSheet.show(getSupportFragmentManager(), "CookbookPickerBottomSheet");
         });
-        
-        // Hide FAB if scrolling down
-        ViewPager2 viewPager = findViewById(R.id.viewPager);
-        // Note: ViewPager2 doesn't directly expose scroll for FAB hide, 
-        // usually done inside the Fragment's RecyclerView scroll listener.
+
+        ExtendedFloatingActionButton fabCook = findViewById(R.id.fabCookingMode);
+        if (recipe != null && recipe.getStepList() != null && !recipe.getStepList().isEmpty()) {
+            fabCook.setVisibility(View.VISIBLE);
+            fabCook.setOnClickListener(v -> {
+                Intent intent = new Intent(this, CookingModeActivity.class);
+                intent.putExtra("extra_recipe", recipe);
+                startActivity(intent);
+            });
+        } else {
+            fabCook.setVisibility(View.GONE);
+        }
     }
 
     private void shareRecipe() {
