@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RecipeBook Pro</string>
+    <string name="login">Giriş Yap</string>
+    <string name="register">Kayıt Ol</string>
+    <string name="welcome">RecipeBook Pro\'ya Hoş Geldiniz</string>
+    <string name="loading">Yükleniyor...</string>
+    <string name="email">E-posta</string>
+    <string name="password">Şifre</string>
+    <string name="confirm_password">Şifreyi Onayla</string>
+    <string name="display_name">Görüntülenen Ad</string>
+    <string name="logout">Çıkış Yap</string>
     <string name="nav_home">Ana Sayfa</string>
     <string name="nav_discover">Keşfet</string>
     <string name="nav_add">Ekle</string>
