@@ -31,12 +31,16 @@ import androidx.core.widget.NestedScrollView;
 import android.graphics.Rect;
 import android.view.View;
 import com.recipebookpro.R;
+import com.recipebookpro.data.remote.CookbookDescriptionLocalizer;
 import com.recipebookpro.domain.model.Cookbook;
 import com.recipebookpro.presentation.ui.BaseActivity;
+import com.recipebookpro.presentation.ui.LocaleHelper;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import coil.Coil;
 import coil.request.ImageRequest;
@@ -67,6 +71,9 @@ public class CookbookAddEditActivity extends BaseActivity {
     private String editCookbookId;
     private Cookbook existingCookbook;
     private boolean isEditMode = false;
+
+    private final ExecutorService cookbookTitleDescExecutor = Executors.newSingleThreadExecutor();
+    private int cookbookLocalizeJobSeq;
 
     private final ActivityResultLauncher<String[]> permissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestMultiplePermissions(),
@@ -144,6 +151,12 @@ public class CookbookAddEditActivity extends BaseActivity {
         if (isEditMode) {
             loadExistingCookbook();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        cookbookTitleDescExecutor.shutdown();
+        super.onDestroy();
     }
 
     private void initViews() {
@@ -251,9 +264,49 @@ public class CookbookAddEditActivity extends BaseActivity {
     private void populateForm() {
         if (existingCookbook == null) return;
 
-        etTitle.setText(existingCookbook.getName());
-        etDescription.setText(existingCookbook.getDescription());
+        final String rawName = existingCookbook.getName() == null ? "" : existingCookbook.getName().trim();
+        final String rawDesc = existingCookbook.getDescription() == null ? "" : existingCookbook.getDescription().trim();
+        etTitle.setText(rawName);
+        etDescription.setText(rawDesc);
         switchPublic.setChecked(existingCookbook.isPublic());
+
+        final int job = ++cookbookLocalizeJobSeq;
+        final String uiLang = LocaleHelper.getLanguage(this);
+        cookbookTitleDescExecutor.execute(() -> {
+            try {
+                String locName = rawName.isEmpty()
+                        ? ""
+                        : CookbookDescriptionLocalizer.localizeSync(getApplicationContext(), rawName, uiLang);
+                String locDesc = rawDesc.isEmpty()
+                        ? ""
+                        : CookbookDescriptionLocalizer.localizeSync(getApplicationContext(), rawDesc, uiLang);
+                runOnUiThread(() -> {
+                    if (isFinishing() || job != cookbookLocalizeJobSeq || existingCookbook == null) {
+                        return;
+                    }
+                    String nameNow = existingCookbook.getName() == null ? "" : existingCookbook.getName().trim();
+                    String descNow = existingCookbook.getDescription() == null ? "" : existingCookbook.getDescription().trim();
+                    if (!rawName.equals(nameNow) || !rawDesc.equals(descNow)) {
+                        return;
+                    }
+                    etTitle.setText(TextUtils.isEmpty(locName) ? rawName : locName);
+                    etDescription.setText(TextUtils.isEmpty(locDesc) ? rawDesc : locDesc);
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    if (isFinishing() || job != cookbookLocalizeJobSeq || existingCookbook == null) {
+                        return;
+                    }
+                    String nameNow = existingCookbook.getName() == null ? "" : existingCookbook.getName().trim();
+                    String descNow = existingCookbook.getDescription() == null ? "" : existingCookbook.getDescription().trim();
+                    if (!rawName.equals(nameNow) || !rawDesc.equals(descNow)) {
+                        return;
+                    }
+                    etTitle.setText(rawName);
+                    etDescription.setText(rawDesc);
+                });
+            }
+        });
 
         // Default placeholder state
         ivCover.setScaleType(ImageView.ScaleType.FIT_CENTER);

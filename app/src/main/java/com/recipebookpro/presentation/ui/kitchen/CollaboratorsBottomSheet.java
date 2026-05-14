@@ -22,6 +22,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textview.MaterialTextView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -30,12 +31,14 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.recipebookpro.R;
-import com.recipebookpro.domain.model.Cookbook;
+import com.recipebookpro.domain.model.Invitation;
 import com.recipebookpro.domain.model.User;
 import com.recipebookpro.util.NotificationTrigger;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
 
@@ -44,7 +47,7 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
     private static final String ARG_TARGET_NAME = "target_name";
 
     private String targetId;
-    private String targetType; // "cookbook", "meal_plan", "shopping_list"
+    private String targetType;
     private String targetName;
     
     private List<String> collaboratorIds = new ArrayList<>();
@@ -55,7 +58,13 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
     private TextInputEditText etSearch;
     private LinearLayout containerSearchResults;
     private LinearLayout containerCollaborators;
+    private LinearLayout containerPendingInvitations;
+    private MaterialTextView tvPendingInvitationsLabel;
     private ListenerRegistration cookbookListener;
+    private ListenerRegistration pendingInvitationsListener;
+
+    private final List<Invitation> pendingOutgoing = new ArrayList<>();
+    private final Set<String> pendingToUserIds = new HashSet<>();
 
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable searchRunnable;
@@ -94,6 +103,8 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
         etSearch = view.findViewById(R.id.etSearchCollab);
         containerSearchResults = view.findViewById(R.id.containerSearchResults);
         containerCollaborators = view.findViewById(R.id.containerCollaborators);
+        containerPendingInvitations = view.findViewById(R.id.containerPendingInvitations);
+        tvPendingInvitationsLabel = view.findViewById(R.id.tvPendingInvitationsLabel);
 
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
@@ -114,6 +125,7 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
         });
 
         loadTarget();
+        loadPendingInvitations();
 
         return view;
     }
@@ -121,9 +133,15 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
     private void loadTarget() {
         String collection;
         switch (targetType) {
-            case "meal_plan": collection = "meal_plans"; break;
-            case "shopping_list": collection = "shopping_lists"; break;
-            default: collection = "cookbooks"; break;
+            case "meal_plan":
+                collection = "meal_plans";
+                break;
+            case "shopping_list":
+                collection = "shopping_lists";
+                break;
+            default:
+                collection = "cookbooks";
+                break;
         }
 
         cookbookListener = db.collection(collection).document(targetId).addSnapshotListener((doc, e) -> {
@@ -139,7 +157,110 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
             }
             
             updateCollaboratorsList();
+            updatePendingInvitationsUI();
         });
+    }
+
+    private void loadPendingInvitations() {
+        if (TextUtils.isEmpty(targetId) || currentUser == null) {
+            return;
+        }
+        if (pendingInvitationsListener != null) {
+            pendingInvitationsListener.remove();
+        }
+        pendingInvitationsListener = db.collection("invitations")
+                .whereEqualTo("targetId", targetId)
+                .whereEqualTo("status", Invitation.STATUS_PENDING)
+                .addSnapshotListener((snap, e) -> {
+                    if (!isAdded() || getContext() == null || snap == null) return;
+                    pendingOutgoing.clear();
+                    pendingToUserIds.clear();
+                    for (QueryDocumentSnapshot doc : snap) {
+                        Invitation inv = Invitation.fromDocument(doc);
+                        if (!targetType.equals(inv.getType())) {
+                            continue;
+                        }
+                        if (currentUser.getUid().equals(inv.getFromUserId())) {
+                            if (TextUtils.isEmpty(inv.getToUserId())) {
+                                continue;
+                            }
+                            pendingOutgoing.add(inv);
+                            pendingToUserIds.add(inv.getToUserId());
+                        }
+                    }
+                    updatePendingInvitationsUI();
+                });
+    }
+
+    private void updatePendingInvitationsUI() {
+        if (containerPendingInvitations == null || tvPendingInvitationsLabel == null || !isAdded() || getContext() == null) {
+            return;
+        }
+        containerPendingInvitations.removeAllViews();
+        boolean owner = currentUser != null && ownerId != null && currentUser.getUid().equals(ownerId);
+        if (!owner || pendingOutgoing.isEmpty()) {
+            tvPendingInvitationsLabel.setVisibility(View.GONE);
+            containerPendingInvitations.setVisibility(View.GONE);
+            return;
+        }
+        tvPendingInvitationsLabel.setVisibility(View.VISIBLE);
+        containerPendingInvitations.setVisibility(View.VISIBLE);
+
+        List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
+        for (Invitation inv : pendingOutgoing) {
+            tasks.add(db.collection("users").document(inv.getToUserId()).get());
+        }
+        if (tasks.isEmpty()) {
+            return;
+        }
+        Tasks.whenAllSuccess(tasks).addOnSuccessListener(results -> {
+            if (containerPendingInvitations == null || !isAdded() || getContext() == null) return;
+            containerPendingInvitations.removeAllViews();
+            for (int i = 0; i < pendingOutgoing.size(); i++) {
+                Invitation inv = pendingOutgoing.get(i);
+                DocumentSnapshot udoc = (DocumentSnapshot) results.get(i);
+
+                View row = LayoutInflater.from(getContext())
+                        .inflate(R.layout.item_pending_invitation_row, containerPendingInvitations, false);
+                TextView tvName = row.findViewById(R.id.tvPendingInviteeName);
+                TextView tvEmail = row.findViewById(R.id.tvPendingInviteeEmail);
+                MaterialButton btnWithdraw = row.findViewById(R.id.btnWithdrawInvitation);
+
+                String displayName = inv.getToUserId();
+                String displayEmail = "";
+                if (udoc != null && udoc.exists()) {
+                    User u = udoc.toObject(User.class);
+                    if (u != null) {
+                        if (!TextUtils.isEmpty(u.getDisplayName())) {
+                            displayName = u.getDisplayName();
+                        }
+                        if (!TextUtils.isEmpty(u.getEmail())) {
+                            displayEmail = u.getEmail();
+                        }
+                    }
+                }
+                tvName.setText(displayName);
+                tvEmail.setText(displayEmail);
+
+                final String invitationId = inv.getId();
+                btnWithdraw.setOnClickListener(v -> confirmWithdrawInvitation(invitationId));
+                containerPendingInvitations.addView(row);
+            }
+        });
+    }
+
+    private void confirmWithdrawInvitation(String invitationId) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.invitation_withdraw)
+                .setMessage(R.string.invitation_withdraw_confirm)
+                .setPositiveButton(R.string.invitation_withdraw, (d, w) ->
+                        db.collection("invitations").document(invitationId).delete()
+                                .addOnSuccessListener(aVoid -> Toast.makeText(getContext(),
+                                        R.string.invitation_withdraw_done, Toast.LENGTH_SHORT).show())
+                                .addOnFailureListener(err -> Toast.makeText(getContext(),
+                                        R.string.error_generic, Toast.LENGTH_SHORT).show()))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     @Override
@@ -148,6 +269,10 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
         if (cookbookListener != null) {
             cookbookListener.remove();
             cookbookListener = null;
+        }
+        if (pendingInvitationsListener != null) {
+            pendingInvitationsListener.remove();
+            pendingInvitationsListener = null;
         }
     }
 
@@ -179,6 +304,7 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
                         }
                         if (currentUser != null && currentUser.getUid().equals(user.getUid())) continue;
                         if (collaboratorIds.contains(user.getUid())) continue;
+                        if (pendingToUserIds.contains(user.getUid())) continue;
 
                         View row = LayoutInflater.from(getContext())
                                 .inflate(android.R.layout.simple_list_item_2, containerSearchResults, false);
@@ -200,7 +326,7 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
         db.collection("invitations")
                 .whereEqualTo("targetId", targetId)
                 .whereEqualTo("toUserId", userId)
-                .whereEqualTo("status", "pending")
+                .whereEqualTo("status", Invitation.STATUS_PENDING)
                 .get()
                 .addOnSuccessListener(existing -> {
                     if (!existing.isEmpty()) {
@@ -208,14 +334,14 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
                         return;
                     }
                     
-                    com.recipebookpro.domain.model.Invitation invitation = new com.recipebookpro.domain.model.Invitation();
+                    Invitation invitation = new Invitation();
                     invitation.setTargetId(targetId);
                     invitation.setType(targetType);
                     invitation.setTargetName(targetName);
                     invitation.setFromUserId(currentUser.getUid());
                     invitation.setFromUserName(currentUser.getDisplayName());
                     invitation.setToUserId(userId);
-                    invitation.setStatus("pending");
+                    invitation.setStatus(Invitation.STATUS_PENDING);
                     invitation.setCreatedAt(System.currentTimeMillis());
 
                     db.collection("invitations").add(invitation)
@@ -284,7 +410,6 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
                 boolean isSelf = currentUser != null && currentUser.getUid().equals(collabUid);
 
                 if (isOwner) {
-                    // Owner can remove anyone (except maybe themselves, but they are not in the collab list usually)
                     btnRemove.setVisibility(View.VISIBLE);
                     btnRemove.setOnClickListener(v -> {
                         new MaterialAlertDialogBuilder(requireContext())
@@ -295,7 +420,6 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
                                 .show();
                     });
                 } else if (isSelf) {
-                    // Collaborator can remove themselves (leave)
                     btnRemove.setVisibility(View.VISIBLE);
                     btnRemove.setOnClickListener(v -> {
                         new MaterialAlertDialogBuilder(requireContext())
@@ -315,9 +439,15 @@ public class CollaboratorsBottomSheet extends BottomSheetDialogFragment {
     private void removeCollaborator(String uid) {
         String collection;
         switch (targetType) {
-            case "meal_plan": collection = "meal_plans"; break;
-            case "shopping_list": collection = "shopping_lists"; break;
-            default: collection = "cookbooks"; break;
+            case "meal_plan":
+                collection = "meal_plans";
+                break;
+            case "shopping_list":
+                collection = "shopping_lists";
+                break;
+            default:
+                collection = "cookbooks";
+                break;
         }
         db.collection(collection).document(targetId)
                 .update("collaboratorIds", FieldValue.arrayRemove(uid));

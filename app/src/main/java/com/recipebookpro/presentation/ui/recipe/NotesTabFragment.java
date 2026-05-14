@@ -17,21 +17,28 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.recipebookpro.R;
+import com.recipebookpro.data.remote.CookbookDescriptionLocalizer;
 import com.recipebookpro.domain.model.Recipe;
+import com.recipebookpro.presentation.ui.LocaleHelper;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class NotesTabFragment extends Fragment {
 
     private static final String ARG_RECIPE = "recipe";
     private Recipe recipe;
-    
+
     private TextInputEditText etNotes;
     private MaterialButton btnSaveNotes;
-    
+
     private FirebaseFirestore db;
     private FirebaseUser currentUser;
+
+    private final ExecutorService notesLocalizeExecutor = Executors.newSingleThreadExecutor();
+    private int notesLocalizeJobSeq;
 
     public static NotesTabFragment newInstance(Recipe recipe) {
         NotesTabFragment fragment = new NotesTabFragment();
@@ -64,20 +71,63 @@ public class NotesTabFragment extends Fragment {
         }
         
         btnSaveNotes.setOnClickListener(v -> saveNotes());
-        
+
         return view;
     }
-    
+
+    @Override
+    public void onDestroyView() {
+        notesLocalizeExecutor.shutdown();
+        super.onDestroyView();
+    }
+
     private void loadNotes() {
         db.collection("recipes").document(recipe.getId())
-          .collection("notes").document(currentUser.getUid())
-          .get()
-          .addOnSuccessListener(documentSnapshot -> {
-              if (documentSnapshot.exists()) {
-                  String text = documentSnapshot.getString("text");
-                  if (text != null) etNotes.setText(text);
-              }
-          });
+                .collection("notes").document(currentUser.getUid())
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (etNotes == null || !isAdded()) {
+                        return;
+                    }
+                    String text = "";
+                    if (documentSnapshot.exists()) {
+                        String t = documentSnapshot.getString("text");
+                        if (t != null) {
+                            text = t;
+                        }
+                    }
+                    etNotes.setText(text);
+                    scheduleLocalizeLoadedNote(text);
+                });
+    }
+
+    private void scheduleLocalizeLoadedNote(String rawSnapshot) {
+        if (TextUtils.isEmpty(rawSnapshot) || etNotes == null) {
+            return;
+        }
+        final int job = ++notesLocalizeJobSeq;
+        final String raw = rawSnapshot;
+        final String uiLang = LocaleHelper.getLanguage(requireContext());
+        notesLocalizeExecutor.execute(() -> {
+            try {
+                String localized = CookbookDescriptionLocalizer.localizeSync(
+                        requireContext().getApplicationContext(), raw, uiLang);
+                if (requireActivity().isFinishing()) {
+                    return;
+                }
+                requireActivity().runOnUiThread(() -> {
+                    if (!isAdded() || etNotes == null || job != notesLocalizeJobSeq) {
+                        return;
+                    }
+                    String current = etNotes.getText() != null ? etNotes.getText().toString() : "";
+                    if (!raw.equals(current)) {
+                        return;
+                    }
+                    etNotes.setText(TextUtils.isEmpty(localized) ? raw : localized);
+                });
+            } catch (Exception ignored) {
+            }
+        });
     }
     
     private void saveNotes() {

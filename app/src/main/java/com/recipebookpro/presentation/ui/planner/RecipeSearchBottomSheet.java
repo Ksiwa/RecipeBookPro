@@ -13,19 +13,30 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.recipebookpro.R;
+import com.recipebookpro.domain.model.Cookbook;
 import com.recipebookpro.domain.model.Recipe;
+import com.recipebookpro.domain.model.RecipeCollection;
 import com.recipebookpro.presentation.ui.planner.adapter.DayRecipeAdapter;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class RecipeSearchBottomSheet extends BottomSheetDialogFragment {
 
@@ -93,24 +104,126 @@ public class RecipeSearchBottomSheet extends BottomSheetDialogFragment {
         return view;
     }
 
+    /**
+     * Planner tarif seçicisi: kullanıcıya ait tarifler + defter (cookbook) ve koleksiyon
+     * içindeki recipeIds ile eşleşen tüm tarifler. Yalnızca recipes.userId sorgusu, deftere
+     * eklenmiş farklı userId’li tarifleri listelemezdi.
+     */
     private void loadUserRecipes(ProgressBar progress) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) return;
 
         progress.setVisibility(View.VISIBLE);
-        FirebaseFirestore.getInstance().collection("recipes")
-                .whereEqualTo("userId", user.getUid())
-                .get()
-                .addOnSuccessListener(snapshots -> {
-                    progress.setVisibility(View.GONE);
-                    allRecipes.clear();
-                    for (QueryDocumentSnapshot doc : snapshots) {
-                        allRecipes.add(Recipe.fromDocument(doc));
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String uid = user.getUid();
+
+        Task<QuerySnapshot> taskOwnRecipes = db.collection("recipes").whereEqualTo("userId", uid).get();
+        Task<QuerySnapshot> taskOwnedCookbooks = db.collection("cookbooks").whereEqualTo("userId", uid).get();
+        Task<QuerySnapshot> taskCollabCookbooks = db.collection("cookbooks")
+                .whereArrayContains("collaboratorIds", uid)
+                .get();
+        Task<QuerySnapshot> taskUserCollections = db.collection("collections")
+                .whereEqualTo("userId", uid)
+                .get();
+
+        Tasks.whenAllSuccess(taskOwnRecipes, taskOwnedCookbooks, taskCollabCookbooks, taskUserCollections)
+                .addOnSuccessListener(results -> {
+                    if (!isAdded()) return;
+
+                    Map<String, Recipe> mergedById = new HashMap<>();
+                    QuerySnapshot snapOwnRecipes = (QuerySnapshot) results.get(0);
+                    for (QueryDocumentSnapshot doc : snapOwnRecipes) {
+                        Recipe recipe = Recipe.fromDocument(doc);
+                        mergedById.put(recipe.getId(), recipe);
                     }
-                    Collections.sort(allRecipes, (a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()));
-                    filterRecipes("");
+
+                    Set<String> idsFromCookbooks = new HashSet<>();
+                    collectRecipeIdsFromCookbookQuery((QuerySnapshot) results.get(1), idsFromCookbooks);
+                    collectRecipeIdsFromCookbookQuery((QuerySnapshot) results.get(2), idsFromCookbooks);
+                    collectRecipeIdsFromCollectionQuery((QuerySnapshot) results.get(3), idsFromCookbooks);
+
+                    List<String> missingIds = new ArrayList<>();
+                    for (String recipeId : idsFromCookbooks) {
+                        if (!mergedById.containsKey(recipeId)) {
+                            missingIds.add(recipeId);
+                        }
+                    }
+
+                    if (missingIds.isEmpty()) {
+                        progress.setVisibility(View.GONE);
+                        publishMergedRecipes(mergedById);
+                        return;
+                    }
+
+                    List<Task<QuerySnapshot>> fetchByIdTasks = new ArrayList<>();
+                    for (List<String> chunk : partition(missingIds, 10)) {
+                        fetchByIdTasks.add(db.collection("recipes")
+                                .whereIn(FieldPath.documentId(), chunk)
+                                .get());
+                    }
+
+                    Tasks.whenAllSuccess(fetchByIdTasks)
+                            .addOnSuccessListener(fetchResults -> {
+                                if (!isAdded()) return;
+                                progress.setVisibility(View.GONE);
+                                for (Object obj : fetchResults) {
+                                    QuerySnapshot snap = (QuerySnapshot) obj;
+                                    for (DocumentSnapshot doc : snap.getDocuments()) {
+                                        Recipe recipe = Recipe.fromDocument(doc);
+                                        mergedById.put(recipe.getId(), recipe);
+                                    }
+                                }
+                                publishMergedRecipes(mergedById);
+                            })
+                            .addOnFailureListener(e -> {
+                                if (!isAdded()) return;
+                                progress.setVisibility(View.GONE);
+                                publishMergedRecipes(mergedById);
+                            });
                 })
-                .addOnFailureListener(e -> progress.setVisibility(View.GONE));
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    progress.setVisibility(View.GONE);
+                });
+    }
+
+    private void collectRecipeIdsFromCookbookQuery(QuerySnapshot cookbookSnap, Set<String> outIds) {
+        if (cookbookSnap == null) return;
+        for (QueryDocumentSnapshot doc : cookbookSnap) {
+            Cookbook book = Cookbook.fromDocument(doc);
+            for (String recipeId : book.getRecipeIds()) {
+                if (recipeId != null && !recipeId.isEmpty()) {
+                    outIds.add(recipeId);
+                }
+            }
+        }
+    }
+
+    private void collectRecipeIdsFromCollectionQuery(QuerySnapshot collectionSnap, Set<String> outIds) {
+        if (collectionSnap == null) return;
+        for (QueryDocumentSnapshot doc : collectionSnap) {
+            RecipeCollection coll = RecipeCollection.fromDocument(doc);
+            for (String recipeId : coll.getRecipeIds()) {
+                if (recipeId != null && !recipeId.isEmpty()) {
+                    outIds.add(recipeId);
+                }
+            }
+        }
+    }
+
+    private void publishMergedRecipes(Map<String, Recipe> mergedById) {
+        allRecipes.clear();
+        allRecipes.addAll(mergedById.values());
+        Collections.sort(allRecipes, (a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()));
+        filterRecipes("");
+    }
+
+    private <T> List<List<T>> partition(List<T> list, int chunkSize) {
+        List<List<T>> parts = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += chunkSize) {
+            parts.add(new ArrayList<>(list.subList(i, Math.min(list.size(), i + chunkSize))));
+        }
+        return parts;
     }
 
     private void filterRecipes(String query) {

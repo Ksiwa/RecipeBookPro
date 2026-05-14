@@ -3,6 +3,7 @@ package com.recipebookpro.presentation.ui.shopping;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ProgressBar;
@@ -13,13 +14,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.recipebookpro.R;
+import com.recipebookpro.data.remote.ShoppingListTranslationHelper;
 import com.recipebookpro.domain.model.ShoppingList;
 import com.recipebookpro.domain.model.ShoppingList.ShoppingItem;
 import com.recipebookpro.presentation.ui.BaseActivity;
+import com.recipebookpro.presentation.ui.LocaleHelper;
 import com.recipebookpro.presentation.ui.shopping.adapter.ShoppingItemAdapter;
 import android.graphics.Rect;
 import androidx.core.view.ViewCompat;
@@ -27,6 +31,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ShoppingListDetailActivity extends BaseActivity {
 
@@ -45,6 +51,9 @@ public class ShoppingListDetailActivity extends BaseActivity {
     private List<ShoppingItem> items = new ArrayList<>();
     private ListenerRegistration listListener;
     private boolean deletingBecauseEmpty = false;
+    private final ExecutorService shoppingLocalizationExecutor = Executors.newSingleThreadExecutor();
+    private int shoppingSnapshotGen = 0;
+    private String shoppingDisplayedLocale;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,6 +147,16 @@ public class ShoppingListDetailActivity extends BaseActivity {
                 );
                 saveListChanges();
             }
+
+            @Override
+            public void onEditClick(int position) {
+                showEditShoppingItemDialog(position);
+            }
+
+            @Override
+            public void onDeleteClick(int position) {
+                confirmRemoveShoppingItem(position);
+            }
         });
         rvItems.setAdapter(adapter);
     }
@@ -157,16 +176,96 @@ public class ShoppingListDetailActivity extends BaseActivity {
                 return;
             }
             shoppingList = ShoppingList.fromDocument(doc);
-            
+
             String listName = shoppingList.getName();
             if ("system_planner_weekly_menu".equals(listName) || "Weekly Menu Shopping".equals(listName) || "Haftalık Menü Alışverişi".equals(listName)) {
                 listName = getString(R.string.planner_weekly_menu_list_name);
             }
             toolbar.setTitle(listName);
-            
+
             items.clear();
             items.addAll(shoppingList.getItems());
             adapter.notifyDataSetChanged();
+
+            final int gen = ++shoppingSnapshotGen;
+            final List<ShoppingItem> snapshot = ShoppingListTranslationHelper.copyItems(shoppingList.getItems());
+            shoppingLocalizationExecutor.execute(() -> {
+                try {
+                    List<ShoppingItem> working = ShoppingListTranslationHelper.copyItems(snapshot);
+                    boolean changed = ShoppingListTranslationHelper.localizeItemsSync(
+                            getApplicationContext(), working, LocaleHelper.getLanguage(ShoppingListDetailActivity.this));
+                    runOnUiThread(() -> {
+                        if (gen != shoppingSnapshotGen) {
+                            return;
+                        }
+                        if (shoppingList == null) {
+                            return;
+                        }
+                        items.clear();
+                        items.addAll(working);
+                        shoppingList.setItems(new ArrayList<>(items));
+                        adapter.notifyDataSetChanged();
+                        if (changed) {
+                            persistTranslatedListQuietly();
+                        }
+                        shoppingDisplayedLocale = LocaleHelper.getLanguage(ShoppingListDetailActivity.this);
+                    });
+                } catch (Exception ignored) {
+                }
+            });
+        });
+    }
+
+    private void persistTranslatedListQuietly() {
+        if (shoppingList == null) {
+            return;
+        }
+        db.collection("shopping_lists").document(listId).set(shoppingList)
+                .addOnFailureListener(e -> { });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String lang = LocaleHelper.getLanguage(this);
+        if (shoppingList == null) {
+            return;
+        }
+        if (!items.isEmpty() && (shoppingDisplayedLocale == null || !shoppingDisplayedLocale.equals(lang))) {
+            scheduleShoppingListReLocalization();
+            return;
+        }
+        if (shoppingDisplayedLocale == null) {
+            shoppingDisplayedLocale = lang;
+        }
+    }
+
+    private void scheduleShoppingListReLocalization() {
+        final int gen = ++shoppingSnapshotGen;
+        final List<ShoppingItem> snapshot = ShoppingListTranslationHelper.copyItems(items);
+        shoppingLocalizationExecutor.execute(() -> {
+            try {
+                List<ShoppingItem> working = ShoppingListTranslationHelper.copyItems(snapshot);
+                boolean changed = ShoppingListTranslationHelper.localizeItemsSync(
+                        getApplicationContext(), working, LocaleHelper.getLanguage(ShoppingListDetailActivity.this));
+                runOnUiThread(() -> {
+                    if (gen != shoppingSnapshotGen) {
+                        return;
+                    }
+                    if (shoppingList == null) {
+                        return;
+                    }
+                    items.clear();
+                    items.addAll(working);
+                    shoppingList.setItems(new ArrayList<>(items));
+                    adapter.notifyDataSetChanged();
+                    if (changed) {
+                        persistTranslatedListQuietly();
+                    }
+                    shoppingDisplayedLocale = LocaleHelper.getLanguage(ShoppingListDetailActivity.this);
+                });
+            } catch (Exception ignored) {
+            }
         });
     }
 
@@ -175,6 +274,7 @@ public class ShoppingListDetailActivity extends BaseActivity {
         if (text.isEmpty()) return;
 
         ShoppingItem newItem = new ShoppingItem(text, "", "");
+        newItem.setUserAdded(true);
         items.add(newItem);
         if (shoppingList != null) {
             shoppingList.setItems(new ArrayList<>(items));
@@ -183,6 +283,76 @@ public class ShoppingListDetailActivity extends BaseActivity {
         rvItems.scrollToPosition(items.size() - 1);
         etNewItem.setText("");
         saveListChanges();
+    }
+
+    private void showEditShoppingItemDialog(int position) {
+        if (position < 0 || position >= items.size()) {
+            return;
+        }
+        ShoppingItem item = items.get(position);
+        if (!item.isUserAdded()) {
+            return;
+        }
+        View form = LayoutInflater.from(this).inflate(R.layout.dialog_edit_shopping_item, null, false);
+        TextInputEditText etLine = form.findViewById(R.id.etEditShoppingLine);
+        etLine.setText(item.getDisplayText());
+
+        androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.shopping_item_edit_title)
+                .setView(form)
+                .setPositiveButton(R.string.save, null)
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                    .setOnClickListener(v -> {
+                        String line = etLine.getText() != null ? etLine.getText().toString().trim() : "";
+                        if (line.isEmpty()) {
+                            Toast.makeText(this, R.string.shopping_item_name_required, Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        item.setName(line);
+                        item.setAmount("");
+                        item.setUnit("");
+                        if (shoppingList != null) {
+                            shoppingList.setItems(new ArrayList<>(items));
+                        }
+                        adapter.notifyItemChanged(position);
+                        saveListChanges();
+                        dialog.dismiss();
+                    });
+            etLine.requestFocus();
+            etLine.selectAll();
+        });
+        dialog.show();
+    }
+
+    private void confirmRemoveShoppingItem(int position) {
+        if (position < 0 || position >= items.size()) {
+            return;
+        }
+        ShoppingItem item = items.get(position);
+        if (!item.isUserAdded()) {
+            return;
+        }
+        String label = item.getDisplayText();
+        if (TextUtils.isEmpty(label)) {
+            label = item.getName();
+        }
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.shopping_item_delete)
+                .setMessage(getString(R.string.shopping_item_delete_confirm, label))
+                .setPositiveButton(R.string.delete, (d, w) -> {
+                    items.remove(position);
+                    adapter.notifyItemRemoved(position);
+                    adapter.notifyItemRangeChanged(position, items.size());
+                    if (shoppingList != null) {
+                        shoppingList.setItems(new ArrayList<>(items));
+                    }
+                    saveListChanges();
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void saveListChanges() {
@@ -226,6 +396,7 @@ public class ShoppingListDetailActivity extends BaseActivity {
             listListener.remove();
             listListener = null;
         }
+        shoppingLocalizationExecutor.shutdown();
         super.onDestroy();
     }
 }

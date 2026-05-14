@@ -48,7 +48,6 @@ import coil.request.ImageRequest;
 import com.recipebookpro.domain.service.TranslationService;
 import com.recipebookpro.data.remote.MLKitTranslationService;
 import com.recipebookpro.domain.usecase.TranslateRecipeUseCase;
-import com.google.mlkit.nl.translate.TranslateLanguage;
 
 public class RecipeDetailActivity extends BaseActivity {
 
@@ -69,6 +68,8 @@ public class RecipeDetailActivity extends BaseActivity {
     private ListenerRegistration likeStateListener;
     private TranslationService translationService;
     private TranslateRecipeUseCase translateRecipeUseCase;
+    private TabLayoutMediator recipeTabLayoutMediator;
+    private boolean firstResume = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,22 +96,36 @@ public class RecipeDetailActivity extends BaseActivity {
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
 
-        setupToolbar();
-        loadUserAllergensAndSetupPager();
-        setupFAB();
-        setupOwnerCard();
-        
-        translationService = new MLKitTranslationService(this);
-        translateRecipeUseCase = new TranslateRecipeUseCase(translationService);
-        findViewById(R.id.btnCloseTranslation).setOnClickListener(v -> {
-            findViewById(R.id.cardTranslation).setVisibility(View.GONE);
-        });
+        Runnable afterRecipeReady = () -> {
+            setupToolbar();
+            loadUserAllergensAndSetupPager();
+            setupFAB();
+            setupOwnerCard();
 
-        findViewById(R.id.btnRevertTranslation).setOnClickListener(v -> revertTranslation());
-        // Automatic translation if needed
-        // Always call translateRecipe; the UseCase will independently identify 
-        // the language and decide if translation is needed based on current app language.
-        translateRecipe();
+            translationService = new MLKitTranslationService(this);
+            translateRecipeUseCase = new TranslateRecipeUseCase(translationService);
+            findViewById(R.id.btnCloseTranslation).setOnClickListener(v -> {
+                findViewById(R.id.cardTranslation).setVisibility(View.GONE);
+            });
+
+            findViewById(R.id.btnRevertTranslation).setOnClickListener(v -> revertTranslation());
+            translateRecipe();
+        };
+
+        String recipeId = recipe.getId();
+        if (!TextUtils.isEmpty(recipeId)) {
+            db.collection("recipes").document(recipeId)
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            recipe = Recipe.fromDocument(doc);
+                        }
+                        afterRecipeReady.run();
+                    })
+                    .addOnFailureListener(e -> afterRecipeReady.run());
+        } else {
+            afterRecipeReady.run();
+        }
     }
 
     private void fetchRecipeFromDeepLink(String recipeId) {
@@ -125,6 +140,14 @@ public class RecipeDetailActivity extends BaseActivity {
                 loadUserAllergensAndSetupPager();
                 setupFAB();
                 setupOwnerCard();
+
+                translationService = new MLKitTranslationService(RecipeDetailActivity.this);
+                translateRecipeUseCase = new TranslateRecipeUseCase(translationService);
+                findViewById(R.id.btnCloseTranslation).setOnClickListener(v -> {
+                    findViewById(R.id.cardTranslation).setVisibility(View.GONE);
+                });
+                findViewById(R.id.btnRevertTranslation).setOnClickListener(v -> revertTranslation());
+                translateRecipe();
             } else {
                 Toast.makeText(this, R.string.recipe_not_found, Toast.LENGTH_SHORT).show();
                 finish();
@@ -361,6 +384,11 @@ public class RecipeDetailActivity extends BaseActivity {
         ViewPager2 viewPager = findViewById(R.id.viewPager);
         TabLayout tabLayout = findViewById(R.id.tabLayout);
 
+        if (recipeTabLayoutMediator != null) {
+            recipeTabLayoutMediator.detach();
+            recipeTabLayoutMediator = null;
+        }
+
         RecipeDetailPagerAdapter pagerAdapter = new RecipeDetailPagerAdapter(this, recipe, userAllergens);
         viewPager.setAdapter(pagerAdapter);
 
@@ -370,9 +398,10 @@ public class RecipeDetailActivity extends BaseActivity {
             getString(R.string.tab_notes)
         };
 
-        new TabLayoutMediator(tabLayout, viewPager,
+        recipeTabLayoutMediator = new TabLayoutMediator(tabLayout, viewPager,
                 (tab, position) -> tab.setText(tabTitles[position])
-        ).attach();
+        );
+        recipeTabLayoutMediator.attach();
     }
 
     private void setupFAB() {
@@ -454,6 +483,7 @@ public class RecipeDetailActivity extends BaseActivity {
             .putString(MergeIngredientsWorker.KEY_USER_ID, currentUser.getUid())
             .putStringArray(MergeIngredientsWorker.KEY_RECIPE_IDS, new String[]{recipe.getId()})
             .putString(MergeIngredientsWorker.KEY_LIST_NAME, listName)
+            .putString(MergeIngredientsWorker.KEY_TARGET_LANGUAGE, com.recipebookpro.presentation.ui.LocaleHelper.getLanguage(this))
             .build();
             
         OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(MergeIngredientsWorker.class)
@@ -583,6 +613,34 @@ public class RecipeDetailActivity extends BaseActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (firstResume) {
+            firstResume = false;
+        } else {
+            refreshRecipeFromFirestore();
+        }
+    }
+
+    private void refreshRecipeFromFirestore() {
+        if (recipe == null || TextUtils.isEmpty(recipe.getId()) || isFinishing()) {
+            return;
+        }
+        db.collection("recipes").document(recipe.getId())
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists() || isFinishing()) {
+                        return;
+                    }
+                    recipe = Recipe.fromDocument(doc);
+                    setupToolbar();
+                    setupViewPagerAndTabs();
+                    checkAllergens();
+                    setupFAB();
+                });
+    }
+
+    @Override
     protected void onStart() {
         super.onStart();
         subscribeLikeState();
@@ -616,10 +674,14 @@ public class RecipeDetailActivity extends BaseActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        if (recipeTabLayoutMediator != null) {
+            recipeTabLayoutMediator.detach();
+            recipeTabLayoutMediator = null;
+        }
         if (translationService != null) {
             translationService.close();
         }
+        super.onDestroy();
     }
 
     private void checkHealthConditions() {

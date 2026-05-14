@@ -67,6 +67,12 @@ public final class FractionUtils {
         }
         String s = amountStr.trim();
         try {
+            if (s.contains(" ")) {
+                String[] wp = s.split("\\s+");
+                if (wp.length == 2 && wp[1].contains("/")) {
+                    return parseAmount(wp[0]) + parseAmount(wp[1]);
+                }
+            }
             // Simple fraction like "1/2"
             if (s.contains("/")) {
                 String[] parts = s.split("/");
@@ -78,5 +84,32 @@ public final class FractionUtils {
         } catch (NumberFormatException e) {
             return 0.0;
         }
+    }
+
+    /**
+     * "1 + 1 + 1/2" gibi artılarla ayrılmış miktarları toplar (alışveriş birleştirme).
+     */
+    public static double sumPlusSeparatedAmounts(String amountStr) {
+        if (amountStr == null || amountStr.trim().isEmpty()) {
+            return 0.0;
+        }
+        double sum = 0.0;
+        for (String part : amountStr.split("\\+")) {
+            sum += parseAmount(part.trim());
+        }
+        return sum;
+    }
+
+    /**
+     * Alışveriş satırı için tam sayı veya kesir gösterimi.
+     */
+    public static String formatShoppingAmount(double value) {
+        if (value <= 0) {
+            return "";
+        }
+        if (Math.abs(value - Math.round(value)) < 1e-6) {
+            return String.valueOf(Math.round(value));
+        }
+        return toFractionString(value);
     }
 }

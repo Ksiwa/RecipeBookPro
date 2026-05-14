@@ -37,6 +37,7 @@ import com.recipebookpro.data.remote.GroqAiNutritionService;
 import com.recipebookpro.data.repository.MealPlanRepositoryImpl;
 import com.recipebookpro.domain.model.PlannerCalorieSummary;
 import com.recipebookpro.presentation.ui.planner.adapter.DayCardAdapter;
+import com.recipebookpro.presentation.ui.LocaleHelper;
 import com.recipebookpro.presentation.ui.recipe.RecipeDetailActivity;
 import com.recipebookpro.presentation.ui.shopping.ShoppingListDetailActivity;
 import com.recipebookpro.presentation.ui.shopping.adapter.ShoppingListAdapter;
@@ -518,6 +519,7 @@ public class PlannerFragment extends Fragment implements DayCardAdapter.OnDayInt
                 .putStringArray(MergeIngredientsWorker.KEY_RECIPE_IDS, allIds.toArray(new String[0]))
                 .putString(MergeIngredientsWorker.KEY_LIST_NAME, listName)
                 .putBoolean(MergeIngredientsWorker.KEY_OVERWRITE_EXISTING, true)
+                .putString(MergeIngredientsWorker.KEY_TARGET_LANGUAGE, LocaleHelper.getLanguage(requireContext()))
                 .build();
 
         OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(MergeIngredientsWorker.class)

@@ -264,6 +264,11 @@
     <string name="no_results_found">Sonuç bulunamadı</string>
     <string name="invitation_already_sent">Zaten davet gönderilmiş</string>
     <string name="invitation_sent_to_user">%1$s kullanıcısına davet gönderildi</string>
+    <string name="collaborators_pending_invitations">Bekleyen davetler</string>
+    <string name="invitation_status_pending">Beklemede</string>
+    <string name="invitation_withdraw">İptal et</string>
+    <string name="invitation_withdraw_confirm">Bu daveti iptal etmek istiyor musunuz? Karşı taraf daveti artık göremez.</string>
+    <string name="invitation_withdraw_done">Davet iptal edildi</string>
     <string name="no_collaborators_yet">Henüz ortak çalışan yok</string>
     <string name="remove_collaborator_confirm">Bu ortağı kaldırmak istiyor musunuz?</string>
     <string name="enter_recipe_title">Lütfen tarif adını girin</string>
@@ -478,6 +483,14 @@
     <string name="shopping_item_count_format">%1$d ürün</string>
     <string name="shopping_item_status_at_home">Evde Var</string>
     <string name="shopping_item_status_to_buy">Alınacak</string>
+    <string name="shopping_item_edit">Düzenle</string>
+    <string name="shopping_item_delete">Listeden kaldır</string>
+    <string name="shopping_item_delete_confirm">%1$s satırını listeden kaldırmak istiyor musunuz?</string>
+    <string name="shopping_item_edit_title">Ürünü düzenle</string>
+    <string name="shopping_item_edit_line_hint">Ürün satırı</string>
+    <string name="shopping_item_name_required">Ürün adı veya miktar girin.</string>
+    <string name="shopping_item_source_user">Ben ekledim</string>
+    <string name="shopping_item_source_recipe">Tariflerden</string>
     <string name="meal_plan_duration">Süre</string>
     <string name="meal_plan_days_3">3 Günlük</string>
     <string name="meal_plan_days_7">7 Günlük</string>

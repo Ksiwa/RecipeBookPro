@@ -1,6 +1,7 @@
 package com.recipebookpro.presentation.ui.shopping.adapter;
 
 import android.graphics.Paint;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +9,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textview.MaterialTextView;
@@ -23,7 +25,12 @@ public class ShoppingItemAdapter extends RecyclerView.Adapter<ShoppingItemAdapte
 
     public interface OnItemInteractionListener {
         void onCheckChanged(int position, boolean isChecked);
+
         void onHomeStatusChanged(int position, boolean haveItAtHome);
+
+        void onEditClick(int position);
+
+        void onDeleteClick(int position);
     }
 
     public ShoppingItemAdapter(List<ShoppingItem> items, OnItemInteractionListener listener) {
@@ -43,7 +50,23 @@ public class ShoppingItemAdapter extends RecyclerView.Adapter<ShoppingItemAdapte
         ShoppingItem item = items.get(position);
         
         holder.tvName.setText(item.getDisplayText());
-        
+
+        boolean userAdded = item.isUserAdded();
+        holder.tvSource.setText(userAdded ? R.string.shopping_item_source_user : R.string.shopping_item_source_recipe);
+        TypedValue typedValue = new TypedValue();
+        if (userAdded) {
+            holder.itemView.getContext().getTheme().resolveAttribute(
+                    com.google.android.material.R.attr.colorPrimary, typedValue, true);
+        } else {
+            holder.itemView.getContext().getTheme().resolveAttribute(
+                    com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true);
+        }
+        holder.tvSource.setTextColor(typedValue.data);
+
+        int btnVis = userAdded ? View.VISIBLE : View.GONE;
+        holder.btnEdit.setVisibility(btnVis);
+        holder.btnDelete.setVisibility(btnVis);
+
         // Remove listeners temporarily to prevent unwanted triggers during bind
         holder.cbItem.setOnCheckedChangeListener(null);
         holder.switchStatus.setOnCheckedChangeListener(null);
@@ -60,15 +83,34 @@ public class ShoppingItemAdapter extends RecyclerView.Adapter<ShoppingItemAdapte
 
         holder.cbItem.setOnCheckedChangeListener((buttonView, isChecked) -> {
             updateStrikeThrough(holder.tvName, isChecked || holder.switchStatus.isChecked());
-            if (listener != null) listener.onCheckChanged(holder.getAdapterPosition(), isChecked);
+            int pos = holder.getAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION && listener != null) {
+                listener.onCheckChanged(pos, isChecked);
+            }
         });
-        
+
         holder.switchStatus.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            holder.switchStatus.setText(isChecked ? 
-                    holder.itemView.getContext().getString(R.string.shopping_item_status_at_home) : 
+            holder.switchStatus.setText(isChecked ?
+                    holder.itemView.getContext().getString(R.string.shopping_item_status_at_home) :
                     holder.itemView.getContext().getString(R.string.shopping_item_status_to_buy));
             updateStrikeThrough(holder.tvName, isChecked || holder.cbItem.isChecked());
-            if (listener != null) listener.onHomeStatusChanged(holder.getAdapterPosition(), isChecked);
+            int pos = holder.getAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION && listener != null) {
+                listener.onHomeStatusChanged(pos, isChecked);
+            }
+        });
+
+        holder.btnEdit.setOnClickListener(v -> {
+            int pos = holder.getAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION && listener != null) {
+                listener.onEditClick(pos);
+            }
+        });
+        holder.btnDelete.setOnClickListener(v -> {
+            int pos = holder.getAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION && listener != null) {
+                listener.onDeleteClick(pos);
+            }
         });
     }
 
@@ -89,14 +131,20 @@ public class ShoppingItemAdapter extends RecyclerView.Adapter<ShoppingItemAdapte
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         MaterialCheckBox cbItem;
+        MaterialTextView tvSource;
         MaterialTextView tvName;
         MaterialSwitch switchStatus;
+        MaterialButton btnEdit;
+        MaterialButton btnDelete;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             cbItem = itemView.findViewById(R.id.cbShoppingItem);
+            tvSource = itemView.findViewById(R.id.tvShoppingItemSource);
             tvName = itemView.findViewById(R.id.tvShoppingItemName);
             switchStatus = itemView.findViewById(R.id.switchHomeStatus);
+            btnEdit = itemView.findViewById(R.id.btnEditShoppingItem);
+            btnDelete = itemView.findViewById(R.id.btnDeleteShoppingItem);
         }
     }
 }

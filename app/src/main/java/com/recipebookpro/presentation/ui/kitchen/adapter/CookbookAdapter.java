@@ -1,5 +1,6 @@
 package com.recipebookpro.presentation.ui.kitchen.adapter;
 
+import android.content.Context;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,15 +15,23 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.chip.Chip;
 import com.recipebookpro.R;
+import com.recipebookpro.data.remote.CookbookDescriptionLocalizer;
 import com.recipebookpro.domain.model.Cookbook;
+import com.recipebookpro.presentation.ui.LocaleHelper;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import coil.Coil;
 import coil.request.ImageRequest;
 
 public class CookbookAdapter extends RecyclerView.Adapter<CookbookAdapter.ViewHolder> {
-    
+
+    private static final ExecutorService COOKBOOK_DESC_LOCALIZER = Executors.newFixedThreadPool(3);
+    private static final AtomicInteger descBindGeneration = new AtomicInteger();
+
     private final List<Cookbook> cookbooks;
     private final OnCookbookClickListener listener;
     private boolean isHorizontal = false;
@@ -57,12 +66,7 @@ public class CookbookAdapter extends RecyclerView.Adapter<CookbookAdapter.ViewHo
         
         if (isHorizontal) {
             if (holder.tvCookbookDesc != null) {
-                if (!TextUtils.isEmpty(book.getDescription())) {
-                    holder.tvCookbookDesc.setText(book.getDescription());
-                    holder.tvCookbookDesc.setVisibility(View.VISIBLE);
-                } else {
-                    holder.tvCookbookDesc.setVisibility(View.GONE);
-                }
+                bindLocalizedHorizontalDescription(holder, book);
             }
             if (holder.chipFollowers != null) {
                 holder.chipFollowers.setText(String.valueOf(book.getFollowerCount()));
@@ -125,6 +129,44 @@ public class CookbookAdapter extends RecyclerView.Adapter<CookbookAdapter.ViewHo
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onCookbookClick(book);
+        });
+    }
+
+    private void bindLocalizedHorizontalDescription(ViewHolder holder, Cookbook book) {
+        TextView tv = holder.tvCookbookDesc;
+        if (tv == null) {
+            return;
+        }
+        String raw = book.getDescription() != null ? book.getDescription().trim() : "";
+        if (TextUtils.isEmpty(raw)) {
+            tv.setVisibility(View.GONE);
+            return;
+        }
+        tv.setVisibility(View.VISIBLE);
+        tv.setText(raw);
+        int gen = descBindGeneration.incrementAndGet();
+        final String tag = book.getId() + "|" + gen;
+        tv.setTag(tag);
+        final Context appCtx = holder.itemView.getContext().getApplicationContext();
+        final String uiLang = LocaleHelper.getLanguage(holder.itemView.getContext());
+        COOKBOOK_DESC_LOCALIZER.execute(() -> {
+            try {
+                String localized = CookbookDescriptionLocalizer.localizeSync(appCtx, raw, uiLang);
+                final String shown = TextUtils.isEmpty(localized) ? raw : localized;
+                holder.itemView.post(() -> {
+                    if (!tag.equals(tv.getTag())) {
+                        return;
+                    }
+                    tv.setText(shown);
+                });
+            } catch (Exception e) {
+                holder.itemView.post(() -> {
+                    if (!tag.equals(tv.getTag())) {
+                        return;
+                    }
+                    tv.setText(raw);
+                });
+            }
         });
     }
 

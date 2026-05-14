@@ -263,6 +263,11 @@
     <string name="no_results_found">No results found</string>
     <string name="invitation_already_sent">Invitation already sent</string>
     <string name="invitation_sent_to_user">Invitation sent to %1$s</string>
+    <string name="collaborators_pending_invitations">Pending invitations</string>
+    <string name="invitation_status_pending">Pending</string>
+    <string name="invitation_withdraw">Cancel</string>
+    <string name="invitation_withdraw_confirm">Cancel this invitation? The user will no longer see it.</string>
+    <string name="invitation_withdraw_done">Invitation cancelled</string>
     <string name="no_collaborators_yet">No collaborators yet</string>
     <string name="remove_collaborator_confirm">Do you want to remove this collaborator?</string>
     <string name="enter_recipe_title">Please enter recipe title</string>
@@ -524,6 +529,14 @@
     <string name="shopping_item_count_format">%1$d items</string>
     <string name="shopping_item_status_at_home">At Home</string>
     <string name="shopping_item_status_to_buy">To Buy</string>
+    <string name="shopping_item_edit">Edit item</string>
+    <string name="shopping_item_delete">Remove from list</string>
+    <string name="shopping_item_delete_confirm">Remove \"%1$s\" from this list?</string>
+    <string name="shopping_item_edit_title">Edit item</string>
+    <string name="shopping_item_edit_line_hint">Product line</string>
+    <string name="shopping_item_name_required">Enter a product name or amount.</string>
+    <string name="shopping_item_source_user">You added</string>
+    <string name="shopping_item_source_recipe">From recipes</string>
     <string name="delete_cookbook">Delete the Cookbook</string>
     <string name="delete_cookbook_confirm">Are you sure you want to delete this cookbook? The book will be deleted, but the recipes inside will not be lost.</string>
     <string name="cookbook_deleted">The cookbook was successfully deleted.</string>

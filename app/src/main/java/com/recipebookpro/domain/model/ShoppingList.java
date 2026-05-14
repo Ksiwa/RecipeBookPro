@@ -97,6 +97,8 @@ public class ShoppingList implements Serializable {
         private String unit;
         private boolean checked;
         private String homeStatus;
+        /** true: kullanıcı listede elle ekledi; false: tarif/plan birleşiminden geldi. */
+        private boolean userAdded;
 
         public ShoppingItem() {
             this.homeStatus = STATUS_NEED_TO_BUY;
@@ -108,6 +110,7 @@ public class ShoppingList implements Serializable {
             this.unit = unit;
             this.checked = false;
             this.homeStatus = STATUS_NEED_TO_BUY;
+            this.userAdded = false;
         }
 
         public static ShoppingItem fromMap(Map<?, ?> map) {
@@ -129,6 +132,13 @@ public class ShoppingList implements Serializable {
             Object statusVal = map.get("homeStatus");
             item.setHomeStatus(statusVal != null ? String.valueOf(statusVal) : STATUS_NEED_TO_BUY);
 
+            Object userAddedVal = map.get("userAdded");
+            if (userAddedVal instanceof Boolean) {
+                item.setUserAdded((Boolean) userAddedVal);
+            } else {
+                item.setUserAdded(false);
+            }
+
             return item;
         }
 
@@ -146,6 +156,14 @@ public class ShoppingList implements Serializable {
 
         public String getHomeStatus() { return homeStatus == null ? STATUS_NEED_TO_BUY : homeStatus; }
         public void setHomeStatus(String homeStatus) { this.homeStatus = homeStatus; }
+
+        public boolean isUserAdded() {
+            return userAdded;
+        }
+
+        public void setUserAdded(boolean userAdded) {
+            this.userAdded = userAdded;
+        }
 
         public String getDisplayText() {
             StringBuilder sb = new StringBuilder();

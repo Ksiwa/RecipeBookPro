@@ -33,20 +33,29 @@ public class EditableIngredientAdapter extends RecyclerView.Adapter<EditableIngr
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_editable_ingredient, parent, false);
-        return new ViewHolder(view, new IngredientTextWatcher(), new IngredientTextWatcher(), new UnitSelectionListener());
+        return new ViewHolder(view, new IngredientTextWatcher(), new IngredientTextWatcher(), new UnitTextWatcher(), new UnitSelectionListener());
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Recipe.Ingredient ingredient = ingredients.get(position);
 
+        holder.etName.removeTextChangedListener(holder.nameWatcher);
+        holder.etAmount.removeTextChangedListener(holder.amountWatcher);
+        holder.actvUnit.removeTextChangedListener(holder.unitTextWatcher);
+
         holder.nameWatcher.updatePosition(position);
         holder.amountWatcher.updatePosition(position);
+        holder.unitTextWatcher.updatePosition(position);
         holder.unitListener.updatePosition(position);
 
         holder.etName.setText(ingredient.getName());
         holder.etAmount.setText(ingredient.getAmount());
         holder.actvUnit.setText(ingredient.getUnit(), false);
+
+        holder.etName.addTextChangedListener(holder.nameWatcher);
+        holder.etAmount.addTextChangedListener(holder.amountWatcher);
+        holder.actvUnit.addTextChangedListener(holder.unitTextWatcher);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 holder.itemView.getContext(),
@@ -70,7 +79,7 @@ public class EditableIngredientAdapter extends RecyclerView.Adapter<EditableIngr
         return ingredients == null ? 0 : ingredients.size();
     }
 
-    class ViewHolder extends RecyclerView.ViewHolder {
+    static class ViewHolder extends RecyclerView.ViewHolder {
         TextInputEditText etName;
         TextInputEditText etAmount;
         AutoCompleteTextView actvUnit;
@@ -78,9 +87,11 @@ public class EditableIngredientAdapter extends RecyclerView.Adapter<EditableIngr
 
         IngredientTextWatcher nameWatcher;
         IngredientTextWatcher amountWatcher;
+        UnitTextWatcher unitTextWatcher;
         UnitSelectionListener unitListener;
 
-        ViewHolder(View itemView, IngredientTextWatcher nameWatcher, IngredientTextWatcher amountWatcher, UnitSelectionListener unitListener) {
+        ViewHolder(View itemView, IngredientTextWatcher nameWatcher, IngredientTextWatcher amountWatcher,
+                UnitTextWatcher unitTextWatcher, UnitSelectionListener unitListener) {
             super(itemView);
             etName = itemView.findViewById(R.id.etName);
             etAmount = itemView.findViewById(R.id.etAmount);
@@ -94,6 +105,9 @@ public class EditableIngredientAdapter extends RecyclerView.Adapter<EditableIngr
             this.amountWatcher = amountWatcher;
             this.amountWatcher.isName = false;
             etAmount.addTextChangedListener(this.amountWatcher);
+
+            this.unitTextWatcher = unitTextWatcher;
+            actvUnit.addTextChangedListener(this.unitTextWatcher);
 
             this.unitListener = unitListener;
             actvUnit.setOnItemClickListener(this.unitListener);
@@ -122,6 +136,27 @@ public class EditableIngredientAdapter extends RecyclerView.Adapter<EditableIngr
                 } else {
                     ingredients.get(position).setAmount(s.toString());
                 }
+            }
+        }
+    }
+
+    private class UnitTextWatcher implements TextWatcher {
+        private int position;
+
+        public void updatePosition(int position) {
+            this.position = position;
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            if (position >= 0 && position < ingredients.size()) {
+                ingredients.get(position).setUnit(s.toString());
             }
         }
     }

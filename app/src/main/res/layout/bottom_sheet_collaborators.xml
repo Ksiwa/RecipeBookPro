@@ -37,6 +37,24 @@
         android:orientation="vertical" />
 
     <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvPendingInvitationsLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/collaborators_pending_invitations"
+        android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+        android:alpha="0.6"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/containerPendingInvitations"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone" />
+
+    <com.google.android.material.textview.MaterialTextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"

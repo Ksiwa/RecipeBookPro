@@ -27,10 +27,12 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.recipebookpro.R;
+import com.recipebookpro.data.remote.CookbookDescriptionLocalizer;
 import com.recipebookpro.domain.model.Cookbook;
 import com.recipebookpro.domain.model.Recipe;
 import com.recipebookpro.domain.model.User;
 import com.recipebookpro.presentation.ui.BaseActivity;
+import com.recipebookpro.presentation.ui.LocaleHelper;
 import com.recipebookpro.presentation.share.PublicShareIntentHelper;
 import com.recipebookpro.presentation.ui.book.BookReaderActivity;
 import com.recipebookpro.presentation.adapter.RecipeAdapter;
@@ -38,6 +40,8 @@ import com.recipebookpro.presentation.ui.recipe.RecipeDetailActivity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import coil.Coil;
 import coil.request.ImageRequest;
@@ -63,6 +67,11 @@ public class CookbookDetailActivity extends BaseActivity {
 
     private RecipeAdapter adapter;
     private List<Recipe> recipeList = new ArrayList<>();
+
+    private final ExecutorService descriptionExecutor = Executors.newSingleThreadExecutor();
+    private int descriptionJobSeq = 0;
+    /** Son başarılı çeviri veya ham gösterimin yapıldığı uygulama dili (LocaleHelper). */
+    private String descriptionAppliedLang;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -174,8 +183,7 @@ public class CookbookDetailActivity extends BaseActivity {
         toolbar.setTitle(cookbook.getName());
         
         if (!TextUtils.isEmpty(cookbook.getDescription())) {
-            tvDescription.setText(cookbook.getDescription());
-            tvDescription.setVisibility(View.VISIBLE);
+            refreshCookbookDescriptionText();
         } else {
             tvDescription.setVisibility(View.GONE);
         }
@@ -251,6 +259,49 @@ public class CookbookDetailActivity extends BaseActivity {
         }
 
         updateCollaborators();
+    }
+
+    private void refreshCookbookDescriptionText() {
+        if (tvDescription == null || cookbook == null) {
+            return;
+        }
+        if (TextUtils.isEmpty(cookbook.getDescription())) {
+            tvDescription.setVisibility(View.GONE);
+            return;
+        }
+        tvDescription.setVisibility(View.VISIBLE);
+        final String rawFull = cookbook.getDescription();
+        final String rawTrim = rawFull.trim();
+        tvDescription.setText(rawTrim);
+        final int job = ++descriptionJobSeq;
+        final String uiLang = LocaleHelper.getLanguage(this);
+        descriptionExecutor.execute(() -> {
+            try {
+                String localized = CookbookDescriptionLocalizer.localizeSync(
+                        getApplicationContext(), rawFull, uiLang);
+                runOnUiThread(() -> {
+                    if (isFinishing() || job != descriptionJobSeq || cookbook == null) {
+                        return;
+                    }
+                    if (!rawFull.equals(cookbook.getDescription())) {
+                        return;
+                    }
+                    tvDescription.setText(TextUtils.isEmpty(localized) ? rawTrim : localized);
+                    descriptionAppliedLang = uiLang;
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    if (isFinishing() || job != descriptionJobSeq || cookbook == null) {
+                        return;
+                    }
+                    if (!rawFull.equals(cookbook.getDescription())) {
+                        return;
+                    }
+                    tvDescription.setText(rawTrim);
+                    descriptionAppliedLang = uiLang;
+                });
+            }
+        });
     }
 
     private void setupOwnerCard() {
@@ -463,6 +514,20 @@ public class CookbookDetailActivity extends BaseActivity {
                     Toast.makeText(this, R.string.delete_error, Toast.LENGTH_SHORT).show();
                 });
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String lang = LocaleHelper.getLanguage(this);
+        if (cookbook != null && !TextUtils.isEmpty(cookbook.getDescription())
+                && descriptionAppliedLang != null && !descriptionAppliedLang.equals(lang)) {
+            refreshCookbookDescriptionText();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        descriptionExecutor.shutdown();
+        super.onDestroy();
+    }
 }
-
-

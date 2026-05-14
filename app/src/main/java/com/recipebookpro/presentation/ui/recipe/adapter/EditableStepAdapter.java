@@ -47,11 +47,17 @@ public class EditableStepAdapter extends RecyclerView.Adapter<EditableStepAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Step step = steps.get(position);
 
+        holder.etStepDescription.removeTextChangedListener(holder.descWatcher);
+        holder.etStepTimer.removeTextChangedListener(holder.timerWatcher);
+
         holder.descWatcher.updatePosition(position);
         holder.timerWatcher.updatePosition(position);
 
         holder.etStepDescription.setText(step.getDescription());
         holder.etStepTimer.setText(step.getTimerMinutes() > 0 ? String.valueOf(step.getTimerMinutes()) : "");
+
+        holder.etStepDescription.addTextChangedListener(holder.descWatcher);
+        holder.etStepTimer.addTextChangedListener(holder.timerWatcher);
 
         holder.btnDeleteStep.setOnClickListener(v -> {
             int currentPos = holder.getAdapterPosition();
