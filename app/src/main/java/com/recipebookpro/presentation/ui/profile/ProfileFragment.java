@@ -290,7 +290,9 @@ public class ProfileFragment extends Fragment {
                                     }
                                 }
 
-                                if (needsMigration || user.getCustomHealthConditionsI18n() == null
+                                if (userHealthConditions.isEmpty() && activeCustomHealthKeys.isEmpty()) {
+                                    persistHealthConditionsToRemote();
+                                } else if (needsMigration || user.getCustomHealthConditionsI18n() == null
                                         || user.getCustomHealthConditionsI18n().isEmpty()) {
                                     persistHealthConditionsToRemote();
                                 }
@@ -542,9 +544,6 @@ public class ProfileFragment extends Fragment {
 
         migrateTriggerMapsToKey(condition);
 
-        if (tetikleyiciler != null && !tetikleyiciler.isEmpty()) {
-            userHealthTriggers.put(condition.getKey(), tetikleyiciler);
-        }
         if (kisaUyariSablonu != null && !TextUtils.isEmpty(kisaUyariSablonu.getTr())) {
             userHealthWarningTemplates.put(condition.getKey(), kisaUyariSablonu.getTr());
         }
@@ -552,10 +551,27 @@ public class ProfileFragment extends Fragment {
             userHealthWarningTemplates.put(condition.getKey() + "_en", kisaUyariSablonu.getEn());
         }
 
-        onHealthConditionChanged();
         Toast.makeText(requireContext(),
                 getString(R.string.health_analysis_success, condition.getForLang(LocaleHelper.getLanguage(requireContext()))),
                 Toast.LENGTH_LONG).show();
+
+        if (tetikleyiciler != null && !tetikleyiciler.isEmpty()) {
+            String currentLang = LocaleHelper.getLanguage(requireContext());
+            String oppositeLang = currentLang.equalsIgnoreCase("tr") ? "en" : "tr";
+            com.recipebookpro.util.RiskyIngredientLocaleHelper.ensureLanguage(requireContext(), tetikleyiciler, oppositeLang, translated -> {
+                if (!isAdded()) return;
+                List<String> combinedTriggers = new ArrayList<>(tetikleyiciler);
+                for (String t : translated) {
+                    if (!combinedTriggers.contains(t)) {
+                        combinedTriggers.add(t);
+                    }
+                }
+                userHealthTriggers.put(condition.getKey(), combinedTriggers);
+                onHealthConditionChanged();
+            });
+        } else {
+            onHealthConditionChanged();
+        }
     }
 
     private void removeCustomConditionByKey(String key) {
@@ -573,13 +589,20 @@ public class ProfileFragment extends Fragment {
     }
 
     private void refreshCustomHealthChipsForCurrentLanguage(boolean forcePersist) {
-        if (!isAdded() || chipGroupCustomHealthConditions == null
-                || userCustomHealthConditionsI18n.isEmpty()) {
+        if (!isAdded() || chipGroupCustomHealthConditions == null) {
             return;
         }
         String uiLang = LocaleHelper.getLanguage(requireContext());
         boolean langChanged = !uiLang.equals(lastDisplayedUiLang);
         lastDisplayedUiLang = uiLang;
+
+        if (userCustomHealthConditionsI18n.isEmpty()) {
+            populateHealthConditionChips();
+            if (forcePersist) {
+                persistHealthConditionsToRemote();
+            }
+            return;
+        }
 
         if (!langChanged && !forcePersist) {
             populateHealthConditionChips();
@@ -674,9 +697,9 @@ public class ProfileFragment extends Fragment {
 
     private List<String> collectHealthConditions() {
         List<String> result = new ArrayList<>();
-        if (getView() == null) return result;
+        if (chipGroupHealthConditions == null) return result;
         for (java.util.Map.Entry<Integer, String> entry : CHIP_CONDITION_MAP.entrySet()) {
-            Chip chip = getView().findViewById(entry.getKey());
+            Chip chip = chipGroupHealthConditions.findViewById(entry.getKey());
             if (chip != null && chip.isChecked()) {
                 result.add(entry.getValue());
             }
@@ -712,14 +735,16 @@ public class ProfileFragment extends Fragment {
         List<String> legacyLabels = BilingualTextHelper.labelsForLang(activeConditions, "tr");
 
         java.util.Map<String, Object> updates = new java.util.HashMap<>();
-        updates.put("healthConditions", userHealthConditions);
-        updates.put("customHealthConditions", legacyLabels);
-        updates.put("customHealthConditionsI18n", toFirestoreLocalizedList(userCustomHealthConditionsI18n));
-        updates.put("activeCustomHealthConditionKeys", new ArrayList<>(activeCustomHealthKeys));
-        updates.put("healthTriggers", userHealthTriggers);
-        updates.put("healthWarningTemplates", userHealthWarningTemplates);
+        updates.put("healthConditions", userHealthConditions != null ? userHealthConditions : new ArrayList<>());
+        updates.put("customHealthConditions", legacyLabels != null ? legacyLabels : new ArrayList<>());
+        updates.put("customHealthConditionsI18n", userCustomHealthConditionsI18n != null ? toFirestoreLocalizedList(userCustomHealthConditionsI18n) : new ArrayList<>());
+        updates.put("activeCustomHealthConditionKeys", activeCustomHealthKeys != null ? new ArrayList<>(activeCustomHealthKeys) : new ArrayList<>());
+        updates.put("healthTriggers", userHealthTriggers != null ? userHealthTriggers : new java.util.HashMap<>());
+        updates.put("healthWarningTemplates", userHealthWarningTemplates != null ? userHealthWarningTemplates : new java.util.HashMap<>());
 
         db.collection("users").document(currentUser.getUid()).update(updates);
+
+        android.util.Log.d("FIRESTORE_WRITE", "Writing to Firestore: " + updates.toString());
 
         final String uid = currentUser.getUid();
         final List<String> finalConditions = new ArrayList<>(userHealthConditions);

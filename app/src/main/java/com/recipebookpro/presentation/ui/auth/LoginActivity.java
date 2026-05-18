@@ -100,6 +100,25 @@ public class LoginActivity extends BaseActivity {
             }
         });
 
+        etPassword.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                String pass = s.toString().trim();
+                if (!TextUtils.isEmpty(pass) && pass.length() < 6) {
+                    tilPassword.setError(getString(R.string.password_too_short));
+                    tilPassword.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+                } else {
+                    tilPassword.setError(null);
+                    tilPassword.setErrorEnabled(false);
+                    tilPassword.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+                }
+            }
+        });
+
         btnLogin.setOnClickListener(v -> loginUser());
         btnGoogleLogin.setOnClickListener(v -> startGoogleSignIn());
         tvForgotPassword.setOnClickListener(v -> handleForgotPassword());
@@ -131,6 +150,8 @@ public class LoginActivity extends BaseActivity {
         boolean hasError = false;
         tilEmail.setError(null);
         tilPassword.setError(null);
+        tilPassword.setErrorEnabled(false);
+        tilPassword.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
 
         if (TextUtils.isEmpty(email)) {
             tilEmail.setError(getString(R.string.required_field));
@@ -138,6 +159,7 @@ public class LoginActivity extends BaseActivity {
         }
         if (TextUtils.isEmpty(password)) {
             tilPassword.setError(getString(R.string.required_field));
+            tilPassword.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
             hasError = true;
         }
 

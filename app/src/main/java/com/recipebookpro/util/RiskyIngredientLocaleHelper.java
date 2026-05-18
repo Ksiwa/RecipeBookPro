@@ -51,26 +51,30 @@ public final class RiskyIngredientLocaleHelper {
         EN_TO_TR.put(en.toLowerCase(Locale.ROOT), tr);
     }
 
-    public static void ensureUiLanguage(Context context, List<String> labels, Callback callback) {
+    public static void ensureLanguage(Context context, List<String> labels, String targetLang, Callback callback) {
         if (labels == null || labels.isEmpty()) {
             callback.onReady(new ArrayList<>());
             return;
         }
 
-        String targetLang = ShoppingIngredientLocaleFix.normalizeTargetLang(LocaleHelper.getLanguage(context));
+        String target = ShoppingIngredientLocaleFix.normalizeTargetLang(targetLang);
         String joined = TextUtils.join(" ", labels).toLowerCase(Locale.ROOT);
 
         com.google.mlkit.nl.languageid.LanguageIdentifier identifier =
                 com.google.mlkit.nl.languageid.LanguageIdentification.getClient();
         identifier.identifyLanguage(joined).addOnSuccessListener(sourceLang -> {
-            String source = "und".equals(sourceLang) ? guessSource(targetLang, labels) : sourceLang;
-            if (source.equalsIgnoreCase(targetLang)) {
+            String source = "und".equals(sourceLang) ? guessSource(target, labels) : sourceLang;
+            if (source.equalsIgnoreCase(target)) {
                 callback.onReady(new ArrayList<>(labels));
                 return;
             }
-            translateWithMlKit(context, labels, source, targetLang, callback);
+            translateWithMlKit(context, labels, source, target, callback);
         }).addOnFailureListener(e ->
-                callback.onReady(applyDictionaryFallback(labels, targetLang)));
+                callback.onReady(applyDictionaryFallback(labels, target)));
+    }
+
+    public static void ensureUiLanguage(Context context, List<String> labels, Callback callback) {
+        ensureLanguage(context, labels, LocaleHelper.getLanguage(context), callback);
     }
 
     private static String guessSource(String targetLang, List<String> labels) {

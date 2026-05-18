@@ -121,6 +121,7 @@
         android:layout_marginBottom="@dimen/margin_small"
         android:hint="@string/password"
         app:endIconMode="password_toggle"
+        app:errorIconDrawable="@null"
         app:layout_constraintBottom_toTopOf="@+id/tilConfirmPassword"
         app:layout_constraintTop_toBottomOf="@+id/tilEmail">
 
@@ -141,6 +142,7 @@
         android:layout_marginBottom="@dimen/margin_medium"
         android:hint="@string/confirm_password"
         app:endIconMode="password_toggle"
+        app:errorIconDrawable="@null"
         app:layout_constraintBottom_toTopOf="@+id/btnRegister"
         app:layout_constraintTop_toBottomOf="@+id/tilPassword">
 

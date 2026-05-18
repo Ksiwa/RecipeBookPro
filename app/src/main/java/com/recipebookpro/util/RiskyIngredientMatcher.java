@@ -76,6 +76,25 @@ public final class RiskyIngredientMatcher {
         return false;
     }
 
+    private static boolean isWholeWordMatch(String text, String term) {
+        String lowerText = text.toLowerCase(Locale.ROOT);
+        String lowerTerm = term.toLowerCase(Locale.ROOT);
+        int idx = lowerText.indexOf(lowerTerm);
+        while (idx != -1) {
+            boolean beforeOk = idx == 0 ||
+                    !Character.isLetterOrDigit(lowerText.charAt(idx - 1));
+            boolean afterOk = idx + lowerTerm.length() >= lowerText.length() ||
+                    !Character.isLetterOrDigit(lowerText.charAt(idx + lowerTerm.length()));
+            if (lowerTerm.equals("un")) {
+                if (beforeOk) return true;
+            } else {
+                if (beforeOk && afterOk) return true;
+            }
+            idx = lowerText.indexOf(lowerTerm, idx + 1);
+        }
+        return false;
+    }
+
     private static int canonicalGroupIndex(String text) {
         if (text == null) {
             return -1;
@@ -83,7 +102,7 @@ public final class RiskyIngredientMatcher {
         String lower = text.toLowerCase(Locale.ROOT);
         for (int g = 0; g < CANONICAL_GROUPS.length; g++) {
             for (String word : CANONICAL_GROUPS[g]) {
-                if (matchesWordOrPhrase(lower, word) || lower.contains(word)) {
+                if (matchesWordOrPhrase(lower, word) || isWholeWordMatch(lower, word)) {
                     return g;
                 }
             }
@@ -92,12 +111,13 @@ public final class RiskyIngredientMatcher {
     }
 
     private static final String[][] CANONICAL_GROUPS = {
-            {"sugar", "şeker", "seker", "toz şeker", "granulated sugar", "powdered sugar", "pudra"},
-            {"milk", "süt", "sut", "laktoz", "lactose", "dairy", "krema", "cream"},
-            {"flour", "un", "buğday", "wheat", "gluten", "irmik"},
-            {"salt", "tuz", "soya sosu", "soy sauce"},
+            {"refined sugar", "rafine şeker", "sugar", "şeker", "seker", "toz şeker", "granulated sugar", "powdered sugar", "pudra", "bal", "honey", "reçel", "jam", "pekmez", "molasses", "şurup", "syrup", "meyve suyu", "fruit juice", "meyve konsantresi"},
+            {"milk", "süt", "sut", "laktoz", "lactose", "dairy", "krema", "cream", "tam yağlı süt", "whole milk", "yarım yağlı süt", "skim milk"},
+            {"flour", "un", "buğday", "wheat", "gluten", "irmik", "buğday unu", "wheat flour", "bazlama", "yufka", "erişte", "makarna", "börek", "poğaça", "simit", "pide", "lavaş", "galeta"},
+            {"sodium", "sodyum", "tuz", "salt", "turşu", "pickle", "salamura", "soya sosu", "soy sauce", "zeytin", "olive", "konserve", "canned", "sucuk", "salam", "jambon"},
             {"egg", "yumurta"},
-            {"butter", "tereyağı", "tereyagi", "margarin"},
+            {"saturated fat", "doymuş yağ", "sucuk", "salam", "sosis", "kavurma", "kaşar", "tam yağlı peynir", "tereyağı", "butter", "tereyagi", "margarin", "kuyruk yağı", "iç yağı", "bacon", "jambon", "cream", "krema"},
+            {"limon", "lemon", "limon suyu", "lemon juice", "limon kabuğu", "lemon zest", "limon tuzu", "citric acid", "sitrik asit"},
     };
 
     private static boolean ingredientMatchesLabel(Recipe.Ingredient ingredient, String label, double scaleRatio) {
@@ -146,6 +166,6 @@ public final class RiskyIngredientMatcher {
             String regex = "(?i)(^|\\s|\\p{Punct})" + Pattern.quote(n) + "(\\p{L}{0,4})?(\\s|\\p{Punct}|$)";
             return Pattern.compile(regex).matcher(haystack).find();
         }
-        return haystack.contains(n);
+        return isWholeWordMatch(haystack, n);
     }
 }

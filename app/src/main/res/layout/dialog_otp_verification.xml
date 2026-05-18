@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="8dp"
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:strokeWidth="1.2dp"
+    app:cardBackgroundColor="?attr/colorSurface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tvOtpTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/otp_title"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold" />
+
+        <!-- Subtitle -->
+        <TextView
+            android:id="@+id/tvOtpSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/otp_sending"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <!-- 6 Digit Code Input Layout -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/etOtpDigit1"
+                android:layout_width="44dp"
+                android:layout_height="52dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_otp_digit"
+                android:gravity="center"
+                android:inputType="number"
+                android:maxLength="1"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:importantForAutofill="no" />
+
+            <EditText
+                android:id="@+id/etOtpDigit2"
+                android:layout_width="44dp"
+                android:layout_height="52dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_otp_digit"
+                android:gravity="center"
+                android:inputType="number"
+                android:maxLength="1"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:importantForAutofill="no" />
+
+            <EditText
+                android:id="@+id/etOtpDigit3"
+                android:layout_width="44dp"
+                android:layout_height="52dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_otp_digit"
+                android:gravity="center"
+                android:inputType="number"
+                android:maxLength="1"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:importantForAutofill="no" />
+
+            <EditText
+                android:id="@+id/etOtpDigit4"
+                android:layout_width="44dp"
+                android:layout_height="52dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_otp_digit"
+                android:gravity="center"
+                android:inputType="number"
+                android:maxLength="1"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:importantForAutofill="no" />
+
+            <EditText
+                android:id="@+id/etOtpDigit5"
+                android:layout_width="44dp"
+                android:layout_height="52dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_otp_digit"
+                android:gravity="center"
+                android:inputType="number"
+                android:maxLength="1"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:importantForAutofill="no" />
+
+            <EditText
+                android:id="@+id/etOtpDigit6"
+                android:layout_width="44dp"
+                android:layout_height="52dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_otp_digit"
+                android:gravity="center"
+                android:inputType="number"
+                android:maxLength="1"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:importantForAutofill="no" />
+
+        </LinearLayout>
+
+        <!-- Timer / Resend Code elements arranged vertically to avoid horizontal crowding -->
+        <TextView
+            android:id="@+id/tvOtpCountdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:text=""
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnOtpResend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:text="@string/otp_resend"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOutline"
+            android:textStyle="bold"
+            android:clickable="false"
+            android:focusable="true" />
+
+        <!-- Verify & Submit Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOtpVerify"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/otp_verify"
+            app:cornerRadius="12dp" />
+
+        <!-- Cancel Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOtpCancel"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="?attr/colorOutline"
+            android:text="@android:string/cancel" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

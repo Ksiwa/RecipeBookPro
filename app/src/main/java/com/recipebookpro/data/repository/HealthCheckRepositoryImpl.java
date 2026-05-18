@@ -1,4 +1,4 @@
-package com.recipebookpro.data.remote;
+package com.recipebookpro.data.repository;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -7,6 +7,7 @@ import android.util.Log;
 
 import com.recipebookpro.BuildConfig;
 import com.recipebookpro.domain.model.Recipe;
+import com.recipebookpro.domain.repository.HealthCheckRepository;
 import com.recipebookpro.util.RiskyIngredientResolver;
 
 import org.json.JSONArray;
@@ -32,21 +33,17 @@ import java.util.Map;
  *   - Semantik eşleştirme: türevler, eş anlamlılar bulunur.
  *   - Heuristik fallback: API erişilemezse yerel kural tabanlı analiz.
  */
-public class HealthCheckService {
+public class HealthCheckRepositoryImpl implements HealthCheckRepository {
 
-    private static final String TAG       = "HealthCheckService";
+    private static final String TAG       = "HealthCheckRepository";
     private static final String API_KEY   = BuildConfig.GROQ_API_KEY;
     private static final String API_URL   = "https://api.groq.com/openai/v1/chat/completions";
-    private static final String CHAT_MODEL = "llama-3.3-70b-versatile"; // daha güçlü model
-
-    public interface HealthCheckCallback {
-        void onResult(boolean isSafe, String rationale, List<String> riskyIngredients);
-        void onError(String errorMessage);
-    }
+    private static final String CHAT_MODEL = "llama-3.3-70b-versatile";
 
     // ─────────────────────────────────────────────────────────────────────────
     // Giriş noktası
     // ─────────────────────────────────────────────────────────────────────────
+    @Override
     public void checkRecipeSafety(Recipe recipe,
                                    List<String> healthConditions,
                                    List<String> customHealthConditions,
@@ -58,7 +55,7 @@ public class HealthCheckService {
         final Handler mainHandler = new Handler(Looper.getMainLooper());
 
         if (TextUtils.isEmpty(API_KEY) || "YOUR_GROQ_API_KEY".equals(API_KEY)) {
-            mainHandler.post(() -> callback.onError("Groq API Key eksik"));
+            mainHandler.post(() -> callback.onError(recipe.getId(), "Groq API Key eksik"));
             return;
         }
 
@@ -69,7 +66,7 @@ public class HealthCheckService {
         if (allergens != null)              allConditions.addAll(allergens);
 
         if (allConditions.isEmpty()) {
-            mainHandler.post(() -> callback.onResult(true, "", new ArrayList<>()));
+            mainHandler.post(() -> callback.onResult(recipe.getId(), true, "", new ArrayList<>()));
             return;
         }
 
@@ -181,7 +178,7 @@ public class HealthCheckService {
                     final boolean      fSafe  = isSafe;
                     final String       fMsg   = userMessage;
                     final List<String> fRisky = new ArrayList<>(riskyIngredients);
-                    mainHandler.post(() -> callback.onResult(fSafe, fMsg, fRisky));
+                    mainHandler.post(() -> callback.onResult(recipe.getId(), fSafe, fMsg, fRisky));
 
                 } else {
                     String errBody = "";
@@ -213,7 +210,8 @@ public class HealthCheckService {
             "# KRİTİK KURAL — ASLA UNUTMA\n" +
             "Bu konuşmada sana gönderilen 'GÜNCEL PROFİL' dışında HİÇBİR önceki bilgiyi,\n" +
             "konuşmayı veya analizi dikkate ALMA. Her analizi sıfırdan yap.\n" +
-            "Eğer bir hastalık/alerji GÜNCEL PROFİL listesinde YOKSA, o konuda ASLA uyarı verme.\n\n" +
+            "Eğer bir hastalık/alerji GÜNCEL PROFİL listesinde YOKSA, o konuda ASLA uyarı verme.\n" +
+            "If the user has NO health conditions and NO allergens, always return isSafe=true with a positive message. Never warn about ingredients when the health profile is empty.\n\n" +
 
             "# DOĞAL DİL ANALİZİ\n" +
             "Kullanıcı profili tıbbi terimler yerine günlük cümleler içerebilir.\n" +
@@ -247,8 +245,9 @@ public class HealthCheckService {
             "  \"uyari_mesaji\": \"Kullanıcıya yönelik, samimi ve net açıklama. Hangi profil maddesi + hangi tarif malzemesi riski neden yaratıyor, açıkla.\",\n" +
             "  \"tavsiye\": \"Bu bir tıbbi tavsiye değildir. Gerekirse doktorunuza danışın.\"\n" +
             "}\n\n" +
-            "KURAL: 'uyari_mesaji' ve 'tespit_edilen_riskli_malzemeler' içindeki tüm metinler "
-                + targetLang + " dilinde yazılmalıdır.\n" +
+            "KURAL: 'uyari_mesaji' " + targetLang + " dilinde yazılmalıdır.\n" +
+            "KURAL: Return 'tespit_edilen_riskli_malzemeler' list in the SAME LANGUAGE as the recipe ingredients — not the user's condition language.\n" +
+            "KURAL: In tespit_edilen_riskli_malzemeler list, return ONLY the EXACT ingredient names as they appear in the recipe. Never return abstract nutritional terms like 'saturated fat', 'sodium', 'refined sugar', 'gluten'. Instead, if sucuk is risky return 'sucuk', if kaşar is risky return 'kaşar', if bal is risky return 'bal', if bazlama is risky return 'bazlama'.\n" +
             "KURAL: 'uygun_mu' false ise 'tespit_edilen_riskli_malzemeler' BOŞ OLAMAZ.\n" +
             "KURAL: 'uygun_mu' true ise 'tespit_edilen_riskli_malzemeler' boş liste olmalı ve 'uyari_mesaji' olumlu olmalı.\n" +
             "KURAL: JSON dışında hiçbir açıklama, selamlama veya markdown ekleme.";
@@ -262,7 +261,7 @@ public class HealthCheckService {
         StringBuilder sb = new StringBuilder();
 
         sb.append("# GÜNCEL PROFİL\n");
-        sb.append("Hastalıklar ve Alerjiler (SADECE bunlara bak):\n");
+        sb.append("Bu kullanıcının hastalıkları ve alerjileri (SADECE bunlara bak):\n");
         for (String cond : allConditions) {
             sb.append("  - ").append(cond).append("\n");
         }
@@ -331,7 +330,7 @@ public class HealthCheckService {
                             + TextUtils.join(", ", riskyIngredients)
                         : "Based on your health profile, some ingredients may pose a risk: "
                             + TextUtils.join(", ", riskyIngredients);
-                deliver(simulatedSafe, rationaleText, riskyIngredients, callback, mainHandler);
+                deliver(recipe.getId(), simulatedSafe, rationaleText, riskyIngredients, callback, mainHandler);
                 return;
             }
         }
@@ -408,15 +407,15 @@ public class HealthCheckService {
                     : "The ingredients do not conflict with your health profile. Enjoy!";
         }
 
-        deliver(simulatedSafe, rationaleText, riskyIngredients, callback, mainHandler);
+        deliver(recipe.getId(), simulatedSafe, rationaleText, riskyIngredients, callback, mainHandler);
     }
 
-    private void deliver(boolean isSafe, String rationale, List<String> risky,
+    private void deliver(String recipeId, boolean isSafe, String rationale, List<String> risky,
                           HealthCheckCallback callback, Handler mainHandler) {
         final boolean      fSafe  = isSafe;
         final String       fMsg   = rationale;
         final List<String> fRisky = new ArrayList<>(risky);
-        mainHandler.post(() -> callback.onResult(fSafe, fMsg, fRisky));
+        mainHandler.post(() -> callback.onResult(recipeId, fSafe, fMsg, fRisky));
     }
 
     // ─────────────────────────────────────────────────────────────────────────

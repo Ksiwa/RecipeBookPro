@@ -44,6 +44,14 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Clean up legacy health cache preferences to avoid stale data showing across profiles
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            deleteSharedPreferences("HealthWarningCachePrefs");
+        } else {
+            getSharedPreferences("HealthWarningCachePrefs", android.content.Context.MODE_PRIVATE).edit().clear().apply();
+        }
+        
         setContentView(R.layout.activity_main);
 
         // Apply top inset to AppBarLayout so toolbar doesn't go behind status bar

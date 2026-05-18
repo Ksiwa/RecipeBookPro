@@ -10,6 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -69,13 +70,17 @@ public class IngredientsTabFragment extends Fragment {
         
         rvIngredients.setLayoutManager(new LinearLayoutManager(getContext()));
         
-        java.util.List<String> initialMatchTerms = new ArrayList<>();
-        if (getActivity() instanceof RecipeDetailActivity) {
-            initialMatchTerms = ((RecipeDetailActivity) getActivity()).getRiskyMatchTerms();
-        }
-        adapter = new IngredientAdapter(recipe.getIngredients(), initialMatchTerms);
+        adapter = new IngredientAdapter(recipe.getIngredients(), new java.util.ArrayList<>());
         rvIngredients.setAdapter(adapter);
         
+        com.recipebookpro.presentation.ui.recipe.RecipeDetailViewModel viewModel = 
+            new ViewModelProvider(requireActivity()).get(com.recipebookpro.presentation.ui.recipe.RecipeDetailViewModel.class);
+        viewModel.getRiskyMatchTerms().observe(getViewLifecycleOwner(), terms -> {
+            if (adapter != null && terms != null) {
+                adapter.setRiskyMatchTerms(terms);
+            }
+        });
+
         view.findViewById(R.id.chipNutrition).setOnClickListener(v -> {
             String ingredientsText = recipe.getFormattedIngredients();
             NutritionBottomSheet bottomSheet = NutritionBottomSheet.newInstance(ingredientsText);
@@ -111,11 +116,6 @@ public class IngredientsTabFragment extends Fragment {
     }
 
     public void refreshIngredientsHighlight() {
-        if (getActivity() instanceof RecipeDetailActivity) {
-            java.util.List<String> matchTerms = ((RecipeDetailActivity) getActivity()).getRiskyMatchTerms();
-            if (adapter != null) {
-                adapter.setRiskyMatchTerms(matchTerms);
-            }
-        }
+        // Obsolete, handled by ViewModel observer now
     }
 }

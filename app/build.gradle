@@ -26,9 +26,9 @@ android {
         versionName "1.0"
         
         buildConfigField "String", "GEMINI_API_KEY", "\"${localProps.getProperty('GEMINI_API_KEY', 'YOUR_GEMINI_API_KEY')}\""
+        buildConfigField "String", "SMTP_EMAIL", "\"${localProps.getProperty('SMTP_EMAIL', '')}\""
+        buildConfigField "String", "SMTP_PASSWORD", "\"${localProps.getProperty('SMTP_PASSWORD', '')}\""
         buildConfigField "String", "GROQ_API_KEY", "\"${localProps.getProperty('GROQ_API_KEY', 'YOUR_GROQ_API_KEY')}\""
-        buildConfigField "String", "EDAMAM_APP_ID", "\"${localProps.getProperty('EDAMAM_APP_ID', '')}\""
-        buildConfigField "String", "EDAMAM_APP_KEY", "\"${localProps.getProperty('EDAMAM_APP_KEY', '')}\""
         def shareHttpsBase = localProps.getProperty('SHARE_HTTPS_REDIRECT_BASE', null)
         if (shareHttpsBase == null || shareHttpsBase.trim().isEmpty()) {
             // Firebase Hosting (sharing/open.html) — bir kez: firebase login && firebase deploy --only hosting
@@ -41,6 +41,15 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+
+    packaging {
+        resources {
+            excludes += 'META-INF/NOTICE.md'
+            excludes += 'META-INF/LICENSE.md'
+            excludes += 'META-INF/LICENSE.txt'
+            excludes += 'META-INF/NOTICE.txt'
+        }
     }
 }
 
@@ -95,4 +104,8 @@ dependencies {
 
     // Google Play Services Tasks (Tasks.whenAllSuccess for parallel queries)
     implementation 'com.google.android.gms:play-services-tasks:18.1.0'
+
+    // JavaMail API for sending email
+    implementation 'com.sun.mail:android-mail:1.6.7'
+    implementation 'com.sun.mail:android-activation:1.6.7'
 }
