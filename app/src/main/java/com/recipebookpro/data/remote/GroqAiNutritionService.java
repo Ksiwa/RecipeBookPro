@@ -26,7 +26,8 @@ public class GroqAiNutritionService implements AiNutritionService {
     private static final String CHAT_MODEL = "llama-3.1-8b-instant";
 
     @Override
-    public void analyzeMacrosFromIngredients(String ingredientsText, ResultCallback callback) {
+    public void analyzeMacrosFromIngredients(String ingredientsText, String languageCode, ResultCallback callback) {
+        String normalizedLanguage = "tr".equals(languageCode) ? "tr" : "en";
         if ("YOUR_GROQ_API_KEY".equals(API_KEY)) {
             new Thread(() -> {
                 try { Thread.sleep(1500); } catch (InterruptedException ie) {
@@ -34,15 +35,12 @@ public class GroqAiNutritionService implements AiNutritionService {
                     callback.onError("Interrupted");
                     return;
                 }
-                callback.onSuccess("API Anahtarı eksik! Örnek Değerler:\nKalori: 450 kcal\nProtein: 18g\nKarbonhidrat: 42g\nYağ: 14g\n(Lütfen local.properties'e GROQ_API_KEY ekleyin)");
+                callback.onSuccess(createMissingApiKeySample(normalizedLanguage));
             }).start();
             return;
         }
 
-        String prompt = "Sen uzman bir diyetisyensin. " +
-                "Aşağıdaki malzemelerin birleşimiyle oluşan yemeğin tek porsiyonluk DİYET ve BESİN DEĞERLERİNİ tahmin et. " +
-                "Format tam olarak şöyle olmalı:\nKalori: XXX kcal\nProtein: XX g\nKarbonhidrat: XX g\nYağ: XX g\n\nBaşka hiçbir yorum yazma. Sadece 4 satır besin değeri döndür. " +
-                "Malzemeler:\n" + ingredientsText;
+        String prompt = createMacroPrompt(ingredientsText, normalizedLanguage);
 
         try {
             JSONObject payload = createPayload(prompt);
@@ -76,6 +74,48 @@ public class GroqAiNutritionService implements AiNutritionService {
         } catch (Exception e) {
             callback.onError(e.getMessage());
         }
+    }
+
+    private static String createMissingApiKeySample(String languageCode) {
+        if ("tr".equals(languageCode)) {
+            return "API anahtarı eksik! Örnek değerler:\n"
+                    + "Kalori: 450 kcal\n"
+                    + "Protein: 18 g\n"
+                    + "Karbonhidrat: 42 g\n"
+                    + "Yağ: 14 g\n"
+                    + "(Lütfen local.properties dosyasına GROQ_API_KEY ekleyin)";
+        }
+        return "API key is missing! Sample values:\n"
+                + "Calories: 450 kcal\n"
+                + "Protein: 18 g\n"
+                + "Carbohydrates: 42 g\n"
+                + "Fat: 14 g\n"
+                + "(Please add GROQ_API_KEY to local.properties)";
+    }
+
+    private static String createMacroPrompt(String ingredientsText, String languageCode) {
+        if ("tr".equals(languageCode)) {
+            return "Sen uzman bir diyetisyensin. "
+                    + "Aşağıdaki malzemelerle oluşan yemeğin tek porsiyonluk besin değerlerini tahmin et. "
+                    + "Yanıt dili Türkçe olmalı. "
+                    + "Format tam olarak şöyle olmalı:\n"
+                    + "Kalori: XXX kcal\n"
+                    + "Protein: XX g\n"
+                    + "Karbonhidrat: XX g\n"
+                    + "Yağ: XX g\n\n"
+                    + "Başka hiçbir yorum yazma. Sadece bu 4 satırı döndür. "
+                    + "Malzemeler:\n" + ingredientsText;
+        }
+        return "You are an expert dietitian. "
+                + "Estimate the per-serving nutrition values for the dish made from the ingredients below. "
+                + "The response language must be English. "
+                + "The format must be exactly:\n"
+                + "Calories: XXX kcal\n"
+                + "Protein: XX g\n"
+                + "Carbohydrates: XX g\n"
+                + "Fat: XX g\n\n"
+                + "Do not add any other comments. Return only these 4 lines. "
+                + "Ingredients:\n" + ingredientsText;
     }
 
     private static JSONObject createPayload(String prompt) throws Exception {

@@ -38,7 +38,8 @@ public class TocItemAdapter extends RecyclerView.Adapter<TocItemAdapter.VH> {
     @Override
     public void onBindViewHolder(@NonNull VH holder, int position) {
         Recipe recipe = recipes.get(position);
-        holder.tvTitle.setText(recipe.getTitle() != null ? recipe.getTitle() : "");
+        String lang = com.recipebookpro.presentation.ui.LocaleHelper.getLanguage(holder.itemView.getContext());
+        holder.tvTitle.setText(recipe.getDisplayTitle(lang));
         holder.tvPage.setText(String.valueOf(position + 3));
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {

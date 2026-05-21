@@ -515,7 +515,7 @@ public class RegisterActivity extends BaseActivity {
                     setLoading(false);
                     if (task.isSuccessful()) {
                         Toast.makeText(RegisterActivity.this, R.string.register_success, Toast.LENGTH_LONG).show();
-                        startActivity(new Intent(RegisterActivity.this, MainActivity.class));
+                        startActivity(MainActivity.createProfileStartIntent(RegisterActivity.this));
                         finishAffinity();
                     } else {
                         showMessage(R.string.register_failed);

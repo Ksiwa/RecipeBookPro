@@ -35,6 +35,7 @@ public class Recipe implements Serializable {
     private String translatedInstructions;
     private List<String> translatedAllergens;
     private String originalLanguage; // e.g., "tr", "en"
+    private String translationLanguage; // e.g., "tr", "en"
 
     public Recipe() {
         ingredients = new ArrayList<>();
@@ -141,6 +142,7 @@ public class Recipe implements Serializable {
         recipe.setTranslatedInstructions(document.getString("translatedInstructions"));
         recipe.setTranslatedAllergens(parseStringList(document.get("translatedAllergens")));
         recipe.setOriginalLanguage(document.getString("originalLanguage"));
+        recipe.setTranslationLanguage(document.getString("translationLanguage"));
 
         return recipe;
     }
@@ -158,6 +160,8 @@ public class Recipe implements Serializable {
                     String unit = asString(map.get("unit"));
                     if (!name.isEmpty()) {
                         Ingredient ing = new Ingredient(name, amount, unit);
+                        ing.setTranslatedName(asString(map.get("translatedName")));
+                        ing.setTranslatedUnit(asString(map.get("translatedUnit")));
                         // Parse numericAmount from the amount string
                         ing.setNumericAmount(FractionUtils.parseAmount(amount));
                         list.add(ing);
@@ -503,22 +507,51 @@ public class Recipe implements Serializable {
         this.originalLanguage = originalLanguage;
     }
 
+    public String getTranslationLanguage() {
+        return translationLanguage == null ? "" : translationLanguage;
+    }
+
+    public void setTranslationLanguage(String translationLanguage) {
+        this.translationLanguage = translationLanguage;
+    }
+
     public String getDisplayTitle(String currentLang) {
-        if (translatedTitle != null && !translatedTitle.isEmpty())
+        if (shouldUseTranslation(currentLang) && translatedTitle != null && !translatedTitle.isEmpty())
             return translatedTitle;
         return getTitle();
     }
 
     public String getDisplayDescription(String currentLang) {
-        if (translatedDescription != null && !translatedDescription.isEmpty())
+        if (shouldUseTranslation(currentLang) && translatedDescription != null && !translatedDescription.isEmpty())
             return translatedDescription;
         return getDescription();
     }
 
     public String getDisplayInstructions(String currentLang) {
-        if (translatedInstructions != null && !translatedInstructions.isEmpty())
+        if (shouldUseTranslation(currentLang) && translatedInstructions != null && !translatedInstructions.isEmpty())
             return translatedInstructions;
         return getSteps();
+    }
+
+    private boolean shouldUseTranslation(String currentLang) {
+        String normalizedCurrent = normalizeLanguage(currentLang);
+        String normalizedTranslation = normalizeLanguage(translationLanguage);
+        if (!normalizedTranslation.isEmpty()) {
+            return normalizedTranslation.equals(normalizedCurrent);
+        }
+        String normalizedOriginal = normalizeLanguage(originalLanguage);
+        return normalizedOriginal.isEmpty() || !normalizedOriginal.equals(normalizedCurrent);
+    }
+
+    private String normalizeLanguage(String language) {
+        if (language == null) {
+            return "";
+        }
+        String trimmed = language.trim().toLowerCase();
+        if (trimmed.length() < 2) {
+            return trimmed;
+        }
+        return trimmed.substring(0, 2);
     }
 
     // ========================== Ingredient Inner Class ==========================
@@ -650,6 +683,7 @@ public class Recipe implements Serializable {
         this.translatedDescription = null;
         this.translatedInstructions = null;
         this.translatedAllergens = null;
+        this.translationLanguage = null;
         if (ingredients != null) {
             for (Ingredient ing : ingredients)
                 ing.clearTranslation();

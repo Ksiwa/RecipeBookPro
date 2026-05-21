@@ -142,9 +142,9 @@ public class RecipePageFragment extends Fragment {
                 if (isAdded()) {
                     // Force refresh UI with translated data
                     updateUI(null);
-                    // Save the identified language to Firestore
+                    // Persist translated fields so other screens can render the selected language.
                     FirebaseFirestore.getInstance().collection("recipes").document(recipe.getId())
-                            .update("originalLanguage", recipe.getOriginalLanguage());
+                            .set(recipe);
                 }
             }
             @Override

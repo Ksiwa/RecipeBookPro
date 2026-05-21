@@ -105,7 +105,8 @@ public class IngredientsTabFragment extends Fragment {
     }
     
     private void updateServingsUI() {
-        tvServingsCount.setText(getString(R.string.servings_format, currentServings));
+        tvServingsCount.setText(getResources()
+                .getQuantityString(R.plurals.servings_count_display, currentServings, currentServings));
         double ratio = (double) currentServings / recipe.getServings();
         adapter.setScaleRatio(ratio);
     }

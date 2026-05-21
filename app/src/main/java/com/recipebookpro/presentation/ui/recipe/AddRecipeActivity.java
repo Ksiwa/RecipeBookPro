@@ -69,6 +69,7 @@ public class AddRecipeActivity extends BaseActivity {
         tilCategory = findViewById(R.id.tilRecipeCategory);
         tilSteps = findViewById(R.id.tilRecipeSteps);
         etTitle = findViewById(R.id.etRecipeTitle);
+        RecipeTitleInputConfigurator.configure(etTitle);
         actCategory = findViewById(R.id.actRecipeCategory);
         etDescription = findViewById(R.id.etRecipeDescription);
         etSteps = findViewById(R.id.etRecipeSteps);

@@ -18,6 +18,7 @@ import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.recipebookpro.R;
 import com.recipebookpro.data.remote.GroqAiNutritionService;
 import com.recipebookpro.domain.usecase.AnalyzeIngredientNutritionUseCase;
+import com.recipebookpro.presentation.ui.LocaleHelper;
 
 public class NutritionBottomSheet extends BottomSheetDialogFragment {
 
@@ -74,7 +75,8 @@ public class NutritionBottomSheet extends BottomSheetDialogFragment {
         progressNutrition.setVisibility(View.VISIBLE);
         cardNutritionResult.setVisibility(View.GONE);
 
-        analyzeIngredientNutritionUseCase.execute(ingredientsText, new AnalyzeIngredientNutritionUseCase.Callback() {
+        String uiLanguage = LocaleHelper.getLanguage(requireContext());
+        analyzeIngredientNutritionUseCase.execute(ingredientsText, uiLanguage, new AnalyzeIngredientNutritionUseCase.Callback() {
             @Override
             public void onSuccess(String nutritionText) {
                 new Handler(Looper.getMainLooper()).post(() -> {

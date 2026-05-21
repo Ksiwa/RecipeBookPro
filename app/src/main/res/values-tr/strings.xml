@@ -260,7 +260,6 @@
     <string name="create_password_message">Bu hesap sosyal giriş sağlayıcısı kullanıyor. Şimdi şifre oluşturup sonrasında e-posta/şifre ile de giriş yapabilirsiniz.</string>
     <string name="create_password_action">Şifre Oluştur</string>
     <string name="password_created_for_provider">Şifre başarıyla oluşturuldu. Artık e-posta ve şifre ile de giriş yapabilirsiniz.</string>
-    <string name="likes_count">%1$d beğeni</string>
     <string name="match_percent_display">%1$d%% uyum</string>
     <string name="recipe_owner_label">Paylasan: %1$s</string>
     <string name="recipe_owner_unknown">Bilinmeyen kullanıcı</string>

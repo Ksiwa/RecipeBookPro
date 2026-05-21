@@ -61,8 +61,10 @@ public class CookbookAdapter extends RecyclerView.Adapter<CookbookAdapter.ViewHo
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Cookbook book = cookbooks.get(position);
         holder.tvCookbookName.setText(book.getName());
+        Context context = holder.itemView.getContext();
         int count = book.getRecipeIds() != null ? book.getRecipeIds().size() : 0;
-        holder.tvRecipeCount.setText(holder.itemView.getContext().getString(R.string.recipe_count, count));
+        holder.tvRecipeCount.setText(context.getResources()
+                .getQuantityString(R.plurals.recipe_count_display, count, count));
         
         if (isHorizontal) {
             if (holder.tvCookbookDesc != null) {
@@ -73,7 +75,9 @@ public class CookbookAdapter extends RecyclerView.Adapter<CookbookAdapter.ViewHo
             }
         } else {
             if (holder.tvCookbookLikes != null) {
-                holder.tvCookbookLikes.setText(holder.itemView.getContext().getString(R.string.followers_count, book.getFollowerCount()));
+                int followers = book.getFollowerCount();
+                holder.tvCookbookLikes.setText(context.getResources()
+                        .getQuantityString(R.plurals.followers_count_display, followers, followers));
             }
         }
         
@@ -84,7 +88,6 @@ public class CookbookAdapter extends RecyclerView.Adapter<CookbookAdapter.ViewHo
         boolean isRealImage = imageData instanceof String;
 
         android.util.TypedValue typedValue = new android.util.TypedValue();
-        android.content.Context context = holder.itemView.getContext();
         context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorPrimaryContainer, typedValue, true);
         int bgColor = typedValue.data;
         context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnPrimaryContainer, typedValue, true);

@@ -8,7 +8,6 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import java.util.Locale;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -172,7 +171,7 @@ public class RecipeDetailActivity extends BaseActivity {
 
     private void setupToolbar() {
         MaterialToolbar toolbar = findViewById(R.id.toolbarDetail);
-        String currentLang = Locale.getDefault().getLanguage();
+        String currentLang = com.recipebookpro.presentation.ui.LocaleHelper.getLanguage(this);
         toolbar.setTitle(recipe.getDisplayTitle(currentLang));
 
         toolbar.setNavigationOnClickListener(v -> finish());
@@ -498,9 +497,7 @@ public class RecipeDetailActivity extends BaseActivity {
                 setupToolbar();
                 setupViewPagerAndTabs();
 
-                // Update original language in Firestore for future persistence
-                FirebaseFirestore.getInstance().collection("recipes").document(recipe.getId())
-                        .update("originalLanguage", recipe.getOriginalLanguage());
+                saveTranslatedToFirestore();
 
                 if (onComplete != null) {
                     onComplete.run();

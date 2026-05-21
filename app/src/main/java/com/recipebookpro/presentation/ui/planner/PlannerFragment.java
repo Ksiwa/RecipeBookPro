@@ -437,11 +437,18 @@ public class PlannerFragment extends Fragment implements DayCardAdapter.OnDayInt
         if (coverage == PlannerCalorieSummary.Coverage.ALL_KNOWN) {
             tvTotalCalories.setText(getString(R.string.meal_plan_total_calories, summary.getTotalKnownCalories()));
         } else if (coverage == PlannerCalorieSummary.Coverage.PARTIAL) {
-            tvTotalCalories.setText(getString(R.string.meal_plan_total_calories_partial,
-                    summary.getTotalKnownCalories(), summary.getUnknownRecipeCount()));
+            int unknownCount = summary.getUnknownRecipeCount();
+            tvTotalCalories.setText(getResources().getQuantityString(
+                    R.plurals.meal_plan_unknown_recipes_partial,
+                    unknownCount,
+                    summary.getTotalKnownCalories(),
+                    unknownCount));
         } else {
-            tvTotalCalories.setText(getString(R.string.meal_plan_total_calories_pending,
-                    summary.getUnknownRecipeCount()));
+            int unknownCount = summary.getUnknownRecipeCount();
+            tvTotalCalories.setText(getResources().getQuantityString(
+                    R.plurals.meal_plan_unknown_recipes_pending,
+                    unknownCount,
+                    unknownCount));
         }
     }
 

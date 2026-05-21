@@ -47,7 +47,7 @@ public class DayRecipeAdapter extends RecyclerView.Adapter<DayRecipeAdapter.View
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Recipe recipe = recipes.get(position);
-        String currentLang = java.util.Locale.getDefault().getLanguage();
+        String currentLang = com.recipebookpro.presentation.ui.LocaleHelper.getLanguage(holder.itemView.getContext());
         holder.tvRecipeName.setText(recipe.getDisplayTitle(currentLang));
 
         if (recipe.hasCalorieEstimate()) {

@@ -1,2 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+    <plurals name="likes_count">
+        <item quantity="one">%1$d beğeni</item>
+        <item quantity="other">%1$d beğeni</item>
+    </plurals>
+    <plurals name="recipe_count_display">
+        <item quantity="one">%1$d Tarif</item>
+        <item quantity="other">%1$d Tarif</item>
+    </plurals>
+    <plurals name="recipe_count_label_display">
+        <item quantity="one">%1$d tarif</item>
+        <item quantity="other">%1$d tarif</item>
+    </plurals>
+    <plurals name="followers_count_display">
+        <item quantity="one">%1$d Takipçi</item>
+        <item quantity="other">%1$d Takipçi</item>
+    </plurals>
+    <plurals name="following_count_display">
+        <item quantity="one">%1$d Takip</item>
+        <item quantity="other">%1$d Takip</item>
+    </plurals>
+    <plurals name="shopping_item_count_display">
+        <item quantity="one">%1$d ürün</item>
+        <item quantity="other">%1$d ürün</item>
+    </plurals>
+    <plurals name="servings_count_display">
+        <item quantity="one">%1$d porsiyon</item>
+        <item quantity="other">%1$d porsiyon</item>
+    </plurals>
+    <plurals name="meal_plan_unknown_recipes_partial">
+        <item quantity="one">Bilinen toplam: %1$d kcal · %2$d tarif tahmin bekliyor</item>
+        <item quantity="other">Bilinen toplam: %1$d kcal · %2$d tarif tahmin bekliyor</item>
+    </plurals>
+    <plurals name="meal_plan_unknown_recipes_pending">
+        <item quantity="one">%1$d tarif için kalori henüz hesaplanmadı</item>
+        <item quantity="other">%1$d tarif için kalori henüz hesaplanmadı</item>
+    </plurals>
+    <plurals name="meal_plan_duration_calories_display">
+        <item quantity="one">%1$d Günlük - %2$d kcal</item>
+        <item quantity="other">%1$d Günlük - %2$d kcal</item>
+    </plurals>
+</resources>
