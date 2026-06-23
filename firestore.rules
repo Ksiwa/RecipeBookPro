@@ -1,8 +1,7 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Yardımcı güvenlik fonksiyonları
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -11,33 +10,59 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // 1. Users Koleksiyonu (Kullanıcı Profilleri)
-    match /users/{userId} {
-      // Oturum açmış herkes avatar ve isim bilgisi için profili okuyabilir
-      allow read: if isAuthenticated();
-      // Sadece profilin sahibi kendi bilgilerini güncelleyebilir veya yazabilir
-      allow write: if isOwner(userId);
+    function changedOnly(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
 
-    // 2. Recipes Koleksiyonu (Yemek Tarifleri)
-    match /recipes/{recipeId} {
-      // Oturum açmış herkes tarifleri görebilir
-      allow read: if isAuthenticated();
-      // Sadece oturum açmış kullanıcı kendi kimliğiyle tarif oluşturabilir
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      // Sadece tarifi oluşturan sahip tarifi güncelleyebilir veya silebilir
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    function signedInLikeCounterUpdate() {
+      return isAuthenticated()
+        && changedOnly(['likes'])
+        && request.resource.data.likes is int
+        && (
+          (
+            resource.data.likes is int
+            && (
+              request.resource.data.likes == resource.data.likes + 1
+              || request.resource.data.likes == resource.data.likes - 1
+              || (resource.data.likes <= 0 && request.resource.data.likes == 0)
+            )
+          )
+          || (!resource.data.keys().hasAny(['likes']) && request.resource.data.likes == 1)
+        );
+    }
 
-      // Özel Tarif Notları (Subcollection 'notes')
+    function signedInFollowUpdate() {
+      return isAuthenticated()
+        && changedOnly(['followerIds', 'followerCount', 'followingIds', 'followingCount']);
+    }
+
+    function signedInCookbookFollowUpdate() {
+      return isAuthenticated()
+        && changedOnly(['followerIds', 'followerCount']);
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || signedInFollowUpdate();
+      allow delete: if isOwner(userId);
+    }
+
+    match /recipes/{recipeId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid
+        || signedInLikeCounterUpdate()
+      );
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
       match /notes/{userId} {
-        // Sadece notun sahibi kendi tarif notlarını okuyabilir veya yazabilir
         allow read, write: if isOwner(userId);
       }
     }
 
-    // 3. Cookbooks Koleksiyonu (Yemek Kitapları)
     match /cookbooks/{cookbookId} {
-      // Okuma izni: Sahibi, ortak çalışanlar, takipçiler veya kitap herkese açıksa (isPublic)
       allow read: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
         request.auth.uid in resource.data.collaboratorIds ||
@@ -45,55 +70,54 @@ service cloud.firestore {
         resource.data.isPublic == true ||
         resource.data.public == true
       );
-      // Oluşturma izni: Oturum açmış kullanıcı sadece kendi adına kitap oluşturabilir
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      // Güncelleme/Silme izni: Sadece yemek kitabının sahibi veya ortak çalışanlar yapabilir
-      allow update, delete: if isAuthenticated() && (
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        request.auth.uid in resource.data.collaboratorIds ||
+        signedInCookbookFollowUpdate()
+      );
+      allow delete: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
         request.auth.uid in resource.data.collaboratorIds
       );
     }
 
-    // 4. Shopping Lists Koleksiyonu (Alışveriş Listeleri)
+    match /collections/{collectionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
     match /shopping_lists/{listId} {
-      // Okuma, Güncelleme ve Silme: Sadece listenin sahibi veya ortak çalışanlar
       allow read, update, delete: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
         request.auth.uid in resource.data.collaboratorIds
       );
-      // Oluşturma izni: Kullanıcı sadece kendi adına liste oluşturabilir
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
     }
 
-    // 5. Meal Plans Koleksiyonu (Yemek Planları)
     match /meal_plans/{planId} {
-      // Okuma, Güncelleme ve Silme: Sadece planın sahibi veya ortak çalışanlar
       allow read, update, delete: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
         request.auth.uid in resource.data.collaboratorIds
       );
-      // Oluşturma izni: Sadece kendi adına plan oluşturabilir
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
     }
 
-    // 6. Invitations Koleksiyonu (Ortak Çalışma Davetiyeleri)
     match /invitations/{invitationId} {
-      // Okuma, Güncelleme ve Silme: Sadece daveti gönderen veya alan kişi
       allow read, update, delete: if isAuthenticated() && (
         resource.data.fromUserId == request.auth.uid ||
         resource.data.toUserId == request.auth.uid
       );
-      // Oluşturma izni: Sadece gönderen kişi kendi adına davetiye oluşturabilir
       allow create: if isAuthenticated() && request.resource.data.fromUserId == request.auth.uid;
     }
 
-    // 7. Notifications Koleksiyonu (Bildirimler)
     match /notifications/{notificationId} {
-      // Sadece bildirimin alıcısı kendi bildirimini okuyabilir, güncelleyebilir veya silebilir
       allow read, update, delete: if isAuthenticated() && (
-        resource.data.recipientId == request.auth.uid
+        resource.data.recipientId == request.auth.uid ||
+        resource.data.userId == request.auth.uid ||
+        resource.data.toUserId == request.auth.uid
       );
-      // Oturum açmış herhangi bir kullanıcı bildirim tetikleyebilir (örneğin davet atıldığında)
       allow create: if isAuthenticated();
     }
   }

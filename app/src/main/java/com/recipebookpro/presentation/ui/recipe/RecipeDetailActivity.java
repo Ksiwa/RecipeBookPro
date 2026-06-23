@@ -22,12 +22,13 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.recipebookpro.R;
+import com.recipebookpro.data.repository.RecipeRepositoryImpl;
 import com.recipebookpro.domain.model.Recipe;
 import com.recipebookpro.domain.model.User;
+import com.recipebookpro.domain.repository.RecipeRepository;
 import com.recipebookpro.presentation.ui.BaseActivity;
 import com.recipebookpro.presentation.share.PublicShareIntentHelper;
 import com.recipebookpro.presentation.ui.recipe.adapter.RecipeDetailPagerAdapter;
@@ -45,6 +46,7 @@ import coil.Coil;
 import coil.request.ImageRequest;
 import com.recipebookpro.domain.service.TranslationService;
 import com.recipebookpro.data.remote.MLKitTranslationService;
+import com.recipebookpro.domain.usecase.ToggleRecipeLikeUseCase;
 import com.recipebookpro.domain.usecase.TranslateRecipeUseCase;
 
 public class RecipeDetailActivity extends BaseActivity {
@@ -69,6 +71,7 @@ public class RecipeDetailActivity extends BaseActivity {
     private ListenerRegistration likeStateListener;
     private TranslationService translationService;
     private TranslateRecipeUseCase translateRecipeUseCase;
+    private ToggleRecipeLikeUseCase toggleRecipeLikeUseCase;
     private TabLayoutMediator recipeTabLayoutMediator;
     private boolean firstResume = true;
     private List<String> currentRiskyIngredients = new ArrayList<>();
@@ -106,6 +109,7 @@ public class RecipeDetailActivity extends BaseActivity {
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
+        toggleRecipeLikeUseCase = new ToggleRecipeLikeUseCase(new RecipeRepositoryImpl());
 
         viewModel = new ViewModelProvider(this).get(RecipeDetailViewModel.class);
 
@@ -144,6 +148,7 @@ public class RecipeDetailActivity extends BaseActivity {
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
+        toggleRecipeLikeUseCase = new ToggleRecipeLikeUseCase(new RecipeRepositoryImpl());
 
         db.collection("recipes").document(recipeId).get().addOnSuccessListener(doc -> {
             if (doc.exists()) {
@@ -415,21 +420,23 @@ public class RecipeDetailActivity extends BaseActivity {
             return;
 
         item.setEnabled(false);
-        db.collection("users").document(uid)
-                .update("likedRecipeIds", shouldLike
-                        ? FieldValue.arrayUnion(recipeId)
-                        : FieldValue.arrayRemove(recipeId))
-                .addOnSuccessListener(unused -> {
-                    db.collection("recipes").document(recipeId)
-                            .update("likes", FieldValue.increment(shouldLike ? 1 : -1))
-                            .addOnCompleteListener(task -> item.setEnabled(true));
-                    Toast.makeText(this, shouldLike ? getString(R.string.liked) : getString(R.string.like_removed),
-                            Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    item.setEnabled(true);
-                    Toast.makeText(this, R.string.error_generic, Toast.LENGTH_SHORT).show();
-                });
+        toggleRecipeLikeUseCase.execute(uid, recipeId, shouldLike, new RecipeRepository.OnRecipeActionCompleteListener() {
+            @Override
+            public void onSuccess() {
+                item.setEnabled(true);
+                int delta = shouldLike ? 1 : -1;
+                recipe.setLikes(Math.max(0, recipe.getLikes() + delta));
+                Toast.makeText(RecipeDetailActivity.this,
+                        shouldLike ? getString(R.string.liked) : getString(R.string.like_removed),
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(Exception e) {
+                item.setEnabled(true);
+                Toast.makeText(RecipeDetailActivity.this, R.string.error_generic, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showDeleteDialog() {

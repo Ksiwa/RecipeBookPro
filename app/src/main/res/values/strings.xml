@@ -224,6 +224,7 @@
     <string name="collection_empty">There are no recipes in this collection yet.</string>
     <string name="select_recipe">Select Recipe</string>
     <string name="search_recipe_hint">Search recipe...</string>
+    <string name="planner_recipe_search_empty">No recipes found.</string>
     <string name="search_user_by_email">Search user by email</string>
     <string name="current_collaborators">Current Collaborators</string>
     <string name="invitation_accepted">Invitation accepted</string>

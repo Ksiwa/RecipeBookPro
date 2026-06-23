@@ -7,37 +7,26 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldPath;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.recipebookpro.R;
-import com.recipebookpro.domain.model.Cookbook;
+import com.recipebookpro.data.repository.RecipeRepositoryImpl;
 import com.recipebookpro.domain.model.Recipe;
-import com.recipebookpro.domain.model.RecipeCollection;
-import com.recipebookpro.domain.service.RecipeFamilyDeduplicator;
+import com.recipebookpro.domain.repository.RecipeRepository;
+import com.recipebookpro.domain.usecase.GetAccessiblePlannerRecipesUseCase;
 import com.recipebookpro.presentation.ui.planner.adapter.DayRecipeAdapter;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class RecipeSearchBottomSheet extends BottomSheetDialogFragment {
 
@@ -52,6 +41,8 @@ public class RecipeSearchBottomSheet extends BottomSheetDialogFragment {
     private final List<Recipe> allRecipes = new ArrayList<>();
     private final List<Recipe> filteredRecipes = new ArrayList<>();
     private DayRecipeAdapter adapter;
+    private TextView tvEmpty;
+    private GetAccessiblePlannerRecipesUseCase getAccessiblePlannerRecipesUseCase;
 
     public static RecipeSearchBottomSheet newInstance(String dayKey) {
         RecipeSearchBottomSheet sheet = new RecipeSearchBottomSheet();
@@ -71,6 +62,7 @@ public class RecipeSearchBottomSheet extends BottomSheetDialogFragment {
         if (getArguments() != null) {
             dayKey = getArguments().getString(ARG_DAY_KEY);
         }
+        getAccessiblePlannerRecipesUseCase = new GetAccessiblePlannerRecipesUseCase(new RecipeRepositoryImpl());
     }
 
     @Nullable
@@ -82,6 +74,7 @@ public class RecipeSearchBottomSheet extends BottomSheetDialogFragment {
         TextInputEditText etSearch = view.findViewById(R.id.etRecipeSearch);
         RecyclerView rvResults = view.findViewById(R.id.rvRecipeSearch);
         ProgressBar progress = view.findViewById(R.id.progressRecipeSearch);
+        tvEmpty = view.findViewById(R.id.tvRecipeSearchEmpty);
 
         adapter = new DayRecipeAdapter(filteredRecipes, recipe -> {
             if (listener != null) {
@@ -105,136 +98,55 @@ public class RecipeSearchBottomSheet extends BottomSheetDialogFragment {
         return view;
     }
 
-    /**
-     * Planner tarif seçicisi: kullanıcıya ait tarifler + defter (cookbook) ve koleksiyon
-     * içindeki recipeIds ile eşleşen tüm tarifler. Yalnızca recipes.userId sorgusu, deftere
-     * eklenmiş farklı userId’li tarifleri listelemezdi.
-     */
     private void loadUserRecipes(ProgressBar progress) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) return;
+        if (user == null) {
+            showEmpty(true);
+            return;
+        }
 
         progress.setVisibility(View.VISIBLE);
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        String uid = user.getUid();
-
-        Task<QuerySnapshot> taskOwnRecipes = db.collection("recipes").whereEqualTo("userId", uid).get();
-        Task<QuerySnapshot> taskOwnedCookbooks = db.collection("cookbooks").whereEqualTo("userId", uid).get();
-        Task<QuerySnapshot> taskCollabCookbooks = db.collection("cookbooks")
-                .whereArrayContains("collaboratorIds", uid)
-                .get();
-        Task<QuerySnapshot> taskUserCollections = db.collection("collections")
-                .whereEqualTo("userId", uid)
-                .get();
-
-        Tasks.whenAllSuccess(taskOwnRecipes, taskOwnedCookbooks, taskCollabCookbooks, taskUserCollections)
-                .addOnSuccessListener(results -> {
-                    if (!isAdded()) return;
-
-                    Map<String, Recipe> mergedById = new LinkedHashMap<>();
-                    QuerySnapshot snapOwnRecipes = (QuerySnapshot) results.get(0);
-                    for (QueryDocumentSnapshot doc : snapOwnRecipes) {
-                        Recipe recipe = Recipe.fromDocument(doc);
-                        mergedById.put(recipe.getId(), recipe);
-                    }
-
-                    Set<String> idsFromCookbooks = new HashSet<>();
-                    collectRecipeIdsFromCookbookQuery((QuerySnapshot) results.get(1), idsFromCookbooks);
-                    collectRecipeIdsFromCookbookQuery((QuerySnapshot) results.get(2), idsFromCookbooks);
-                    collectRecipeIdsFromCollectionQuery((QuerySnapshot) results.get(3), idsFromCookbooks);
-
-                    List<String> missingIds = new ArrayList<>();
-                    for (String recipeId : idsFromCookbooks) {
-                        if (!mergedById.containsKey(recipeId)) {
-                            missingIds.add(recipeId);
-                        }
-                    }
-
-                    if (missingIds.isEmpty()) {
-                        progress.setVisibility(View.GONE);
-                        publishMergedRecipes(mergedById);
-                        return;
-                    }
-
-                    List<Task<QuerySnapshot>> fetchByIdTasks = new ArrayList<>();
-                    for (List<String> chunk : partition(missingIds, 10)) {
-                        fetchByIdTasks.add(db.collection("recipes")
-                                .whereIn(FieldPath.documentId(), chunk)
-                                .get());
-                    }
-
-                    Tasks.whenAllSuccess(fetchByIdTasks)
-                            .addOnSuccessListener(fetchResults -> {
-                                if (!isAdded()) return;
-                                progress.setVisibility(View.GONE);
-                                for (Object obj : fetchResults) {
-                                    QuerySnapshot snap = (QuerySnapshot) obj;
-                                    for (DocumentSnapshot doc : snap.getDocuments()) {
-                                        Recipe recipe = Recipe.fromDocument(doc);
-                                        mergedById.put(recipe.getId(), recipe);
-                                    }
-                                }
-                                publishMergedRecipes(mergedById);
-                            })
-                            .addOnFailureListener(e -> {
-                                if (!isAdded()) return;
-                                progress.setVisibility(View.GONE);
-                                publishMergedRecipes(mergedById);
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    if (!isAdded()) return;
-                    progress.setVisibility(View.GONE);
-                });
-    }
-
-    private void collectRecipeIdsFromCookbookQuery(QuerySnapshot cookbookSnap, Set<String> outIds) {
-        if (cookbookSnap == null) return;
-        for (QueryDocumentSnapshot doc : cookbookSnap) {
-            Cookbook book = Cookbook.fromDocument(doc);
-            for (String recipeId : book.getRecipeIds()) {
-                if (recipeId != null && !recipeId.isEmpty()) {
-                    outIds.add(recipeId);
-                }
+        showEmpty(false);
+        getAccessiblePlannerRecipesUseCase.execute(user.getUid(), new RecipeRepository.OnRecipesLoadedListener() {
+            @Override
+            public void onLoaded(List<Recipe> recipes) {
+                if (!isAdded()) return;
+                progress.setVisibility(View.GONE);
+                publishRecipes(recipes);
             }
-        }
-    }
 
-    private void collectRecipeIdsFromCollectionQuery(QuerySnapshot collectionSnap, Set<String> outIds) {
-        if (collectionSnap == null) return;
-        for (QueryDocumentSnapshot doc : collectionSnap) {
-            RecipeCollection coll = RecipeCollection.fromDocument(doc);
-            for (String recipeId : coll.getRecipeIds()) {
-                if (recipeId != null && !recipeId.isEmpty()) {
-                    outIds.add(recipeId);
-                }
+            @Override
+            public void onError(Exception e) {
+                if (!isAdded()) return;
+                progress.setVisibility(View.GONE);
+                publishRecipes(new ArrayList<>());
             }
-        }
+        });
     }
 
-    private void publishMergedRecipes(Map<String, Recipe> mergedById) {
+    private void publishRecipes(List<Recipe> recipes) {
         allRecipes.clear();
-        allRecipes.addAll(RecipeFamilyDeduplicator.keepLatestRecipePerFamily(new ArrayList<>(mergedById.values())));
-        Collections.sort(allRecipes, (a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()));
-        filterRecipes("");
-    }
-
-    private <T> List<List<T>> partition(List<T> list, int chunkSize) {
-        List<List<T>> parts = new ArrayList<>();
-        for (int i = 0; i < list.size(); i += chunkSize) {
-            parts.add(new ArrayList<>(list.subList(i, Math.min(list.size(), i + chunkSize))));
+        if (recipes != null) {
+            allRecipes.addAll(recipes);
         }
-        return parts;
+        filterRecipes("");
     }
 
     private void filterRecipes(String query) {
         filteredRecipes.clear();
-        String q = query.toLowerCase().trim();
+        String q = query == null ? "" : query.toLowerCase().trim();
         for (Recipe r : allRecipes) {
             if (q.isEmpty() || r.getTitle().toLowerCase().contains(q)) {
                 filteredRecipes.add(r);
             }
         }
         adapter.notifyDataSetChanged();
+        showEmpty(filteredRecipes.isEmpty());
+    }
+
+    private void showEmpty(boolean show) {
+        if (tvEmpty != null) {
+            tvEmpty.setVisibility(show ? View.VISIBLE : View.GONE);
+        }
     }
 }

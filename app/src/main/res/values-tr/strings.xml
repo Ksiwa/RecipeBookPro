@@ -224,6 +224,7 @@
     <string name="collection_empty">Bu koleksiyonda henüz tarif yok.</string>
     <string name="select_recipe">Tarif Seç</string>
     <string name="search_recipe_hint">Tarif ara...</string>
+    <string name="planner_recipe_search_empty">Tarif bulunamadi.</string>
     <string name="search_user_by_email">E-posta ile kullanıcı ara</string>
     <string name="current_collaborators">Mevcut Ortak Çalışanlar</string>
     <string name="invitation_accepted">Davet kabul edildi</string>

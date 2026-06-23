@@ -67,6 +67,7 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
     private final Map<String, User> ownersById = new HashMap<>();
     private final Map<Integer, List<String>> ingredientSearchTermsByChipId = new HashMap<>();
     private final Map<String, List<String>> ingredientSearchTermsByTerm = new HashMap<>();
+    private boolean firstResume = true;
 
     private TranslationService translationService;
 
@@ -231,6 +232,7 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
 
     private void loadAllPublicRecipes(List<String> selectedIngredients, String textQuery, String translatedQuery) {
         Set<String> collectedRecipeIds = new LinkedHashSet<>();
+        Set<String> queuedCookbookRecipeIds = new LinkedHashSet<>();
         List<Recipe> allRecipes = new ArrayList<>();
         publicCookbooks.clear();
         
@@ -271,9 +273,10 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
                             publicCookbooks.add(book);
                             if (book.getRecipeIds() != null) {
                                 for (String rid : book.getRecipeIds()) {
-                                    if (!collectedRecipeIds.contains(rid)) {
+                                    if (rid != null && !rid.isEmpty()
+                                            && !collectedRecipeIds.contains(rid)
+                                            && queuedCookbookRecipeIds.add(rid)) {
                                         recipeIds.add(rid);
-                                        collectedRecipeIds.add(rid);
                                     }
                                 }
                             }
@@ -675,11 +678,11 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
             DocumentSnapshot currentUserDoc = transaction.get(db.collection("users").document(currentUid));
 
             List<String> targetFollowerIds = (List<String>) targetUserDoc.get("followerIds");
-            if (targetFollowerIds == null) targetFollowerIds = new ArrayList<>();
+            targetFollowerIds = targetFollowerIds != null ? new ArrayList<>(targetFollowerIds) : new ArrayList<>();
             long targetFollowerCount = targetUserDoc.getLong("followerCount") != null ? targetUserDoc.getLong("followerCount") : 0;
 
             List<String> currentFollowingIds = (List<String>) currentUserDoc.get("followingIds");
-            if (currentFollowingIds == null) currentFollowingIds = new ArrayList<>();
+            currentFollowingIds = currentFollowingIds != null ? new ArrayList<>(currentFollowingIds) : new ArrayList<>();
             long currentFollowingCount = currentUserDoc.getLong("followingCount") != null ? currentUserDoc.getLong("followingCount") : 0;
 
             if (currentlyFollowing) {
@@ -703,11 +706,33 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
                     "followingCount", currentFollowingCount);
 
             return null;
+        }).addOnSuccessListener(unused -> {
+            updateLocalFollowState(userId, currentUid, currentlyFollowing);
         }).addOnFailureListener(e -> {
             if (getContext() != null) {
                 Toast.makeText(getContext(), R.string.follow_action_failed, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void updateLocalFollowState(String targetUserId, String currentUid, boolean wasFollowing) {
+        User targetUser = ownersById.get(targetUserId);
+        if (targetUser == null || currentUid == null) return;
+
+        List<String> followerIds = new ArrayList<>(targetUser.getFollowerIds());
+        int followerCount = targetUser.getFollowerCount();
+
+        if (wasFollowing) {
+            followerIds.remove(currentUid);
+            followerCount = Math.max(0, followerCount - 1);
+        } else if (!followerIds.contains(currentUid)) {
+            followerIds.add(currentUid);
+            followerCount++;
+        }
+
+        targetUser.setFollowerIds(followerIds);
+        targetUser.setFollowerCount(followerCount);
+        adapter.setOwnerMap(ownersById);
     }
 
     @Override
@@ -723,6 +748,16 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
             android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (firstResume) {
+            firstResume = false;
+            return;
+        }
+        performSearch();
     }
 
     @Override
