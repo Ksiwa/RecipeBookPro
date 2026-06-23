@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -241,8 +242,10 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
         Runnable checkDone = () -> {
             pending[0]--;
             if (pending[0] == 0) {
-                loadAllOwnersForSearch(allRecipes, () -> 
-                    filterAndDisplay(allRecipes, selectedIngredients, textQuery, translatedQuery)
+                loadCanonicalPublicRecipes(allRecipes, canonicalRecipes ->
+                        loadAllOwnersForSearch(canonicalRecipes, () ->
+                                filterAndDisplay(canonicalRecipes, selectedIngredients, textQuery, translatedQuery)
+                        )
                 );
             }
         };
@@ -311,6 +314,64 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
                     })
                     .addOnFailureListener(e -> checkDone.run());
         }
+    }
+
+    private interface RecipeListCallback {
+        void onReady(List<Recipe> recipes);
+    }
+
+    private void loadCanonicalPublicRecipes(List<Recipe> recipes, RecipeListCallback callback) {
+        Map<String, Recipe> recipesById = new HashMap<>();
+        Set<String> sourceIdsToFetch = new LinkedHashSet<>();
+
+        for (Recipe recipe : recipes) {
+            if (recipe == null || recipe.getId().isEmpty()) continue;
+            recipesById.put(recipe.getId(), recipe);
+            String sourceId = recipe.getSourceRecipeId();
+            if (!sourceId.isEmpty() && !recipesById.containsKey(sourceId)) {
+                sourceIdsToFetch.add(sourceId);
+            }
+        }
+
+        if (sourceIdsToFetch.isEmpty()) {
+            callback.onReady(keepOriginalPublicRecipesPerFamily(new ArrayList<>(recipesById.values())));
+            return;
+        }
+
+        List<List<String>> chunks = partition(new ArrayList<>(sourceIdsToFetch), 10);
+        final int[] pendingChunks = {chunks.size()};
+
+        for (List<String> chunk : chunks) {
+            db.collection("recipes")
+                    .whereIn(com.google.firebase.firestore.FieldPath.documentId(), chunk)
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            for (DocumentSnapshot doc : task.getResult().getDocuments()) {
+                                Recipe sourceRecipe = Recipe.fromDocument(doc);
+                                if (sourceRecipe.isPublic()) {
+                                    recipesById.put(sourceRecipe.getId(), sourceRecipe);
+                                }
+                            }
+                        }
+                        pendingChunks[0]--;
+                        if (pendingChunks[0] == 0) {
+                            callback.onReady(keepOriginalPublicRecipesPerFamily(new ArrayList<>(recipesById.values())));
+                        }
+                    });
+        }
+    }
+
+    private List<Recipe> keepOriginalPublicRecipesPerFamily(List<Recipe> recipes) {
+        Map<String, Recipe> originalsByFamily = new LinkedHashMap<>();
+
+        for (Recipe recipe : recipes) {
+            if (recipe == null || recipe.getId().isEmpty()) continue;
+            if (!recipe.getSourceRecipeId().isEmpty()) continue;
+            originalsByFamily.put(recipe.getId(), recipe);
+        }
+
+        return new ArrayList<>(originalsByFamily.values());
     }
 
     private void filterAndDisplay(List<Recipe> allRecipes, List<String> selectedIngredients, String textQuery, String translatedQuery) {
