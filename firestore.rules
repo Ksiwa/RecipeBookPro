@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Yardımcı güvenlik fonksiyonları
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. Users Koleksiyonu (Kullanıcı Profilleri)
+    match /users/{userId} {
+      // Oturum açmış herkes avatar ve isim bilgisi için profili okuyabilir
+      allow read: if isAuthenticated();
+      // Sadece profilin sahibi kendi bilgilerini güncelleyebilir veya yazabilir
+      allow write: if isOwner(userId);
+    }
+
+    // 2. Recipes Koleksiyonu (Yemek Tarifleri)
+    match /recipes/{recipeId} {
+      // Oturum açmış herkes tarifleri görebilir
+      allow read: if isAuthenticated();
+      // Sadece oturum açmış kullanıcı kendi kimliğiyle tarif oluşturabilir
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Sadece tarifi oluşturan sahip tarifi güncelleyebilir veya silebilir
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Özel Tarif Notları (Subcollection 'notes')
+      match /notes/{userId} {
+        // Sadece notun sahibi kendi tarif notlarını okuyabilir veya yazabilir
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // 3. Cookbooks Koleksiyonu (Yemek Kitapları)
+    match /cookbooks/{cookbookId} {
+      // Okuma izni: Sahibi, ortak çalışanlar, takipçiler veya kitap herkese açıksa (isPublic)
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        request.auth.uid in resource.data.collaboratorIds ||
+        request.auth.uid in resource.data.followerIds ||
+        resource.data.isPublic == true ||
+        resource.data.public == true
+      );
+      // Oluşturma izni: Oturum açmış kullanıcı sadece kendi adına kitap oluşturabilir
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Güncelleme/Silme izni: Sadece yemek kitabının sahibi veya ortak çalışanlar yapabilir
+      allow update, delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        request.auth.uid in resource.data.collaboratorIds
+      );
+    }
+
+    // 4. Shopping Lists Koleksiyonu (Alışveriş Listeleri)
+    match /shopping_lists/{listId} {
+      // Okuma, Güncelleme ve Silme: Sadece listenin sahibi veya ortak çalışanlar
+      allow read, update, delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        request.auth.uid in resource.data.collaboratorIds
+      );
+      // Oluşturma izni: Kullanıcı sadece kendi adına liste oluşturabilir
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // 5. Meal Plans Koleksiyonu (Yemek Planları)
+    match /meal_plans/{planId} {
+      // Okuma, Güncelleme ve Silme: Sadece planın sahibi veya ortak çalışanlar
+      allow read, update, delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        request.auth.uid in resource.data.collaboratorIds
+      );
+      // Oluşturma izni: Sadece kendi adına plan oluşturabilir
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // 6. Invitations Koleksiyonu (Ortak Çalışma Davetiyeleri)
+    match /invitations/{invitationId} {
+      // Okuma, Güncelleme ve Silme: Sadece daveti gönderen veya alan kişi
+      allow read, update, delete: if isAuthenticated() && (
+        resource.data.fromUserId == request.auth.uid ||
+        resource.data.toUserId == request.auth.uid
+      );
+      // Oluşturma izni: Sadece gönderen kişi kendi adına davetiye oluşturabilir
+      allow create: if isAuthenticated() && request.resource.data.fromUserId == request.auth.uid;
+    }
+
+    // 7. Notifications Koleksiyonu (Bildirimler)
+    match /notifications/{notificationId} {
+      // Sadece bildirimin alıcısı kendi bildirimini okuyabilir, güncelleyebilir veya silebilir
+      allow read, update, delete: if isAuthenticated() && (
+        resource.data.recipientId == request.auth.uid
+      );
+      // Oturum açmış herhangi bir kullanıcı bildirim tetikleyebilir (örneğin davet atıldığında)
+      allow create: if isAuthenticated();
+    }
+  }
+}

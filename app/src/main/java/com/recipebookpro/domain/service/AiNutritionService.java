@@ -13,7 +13,7 @@ public interface AiNutritionService {
         void onError(String message);
     }
 
-    void analyzeMacrosFromIngredients(String ingredientsText, ResultCallback callback);
+    void analyzeMacrosFromIngredients(String ingredientsText, String languageCode, ResultCallback callback);
 
     void estimateTotalCaloriesForRecipe(Recipe recipe, ResultCallback callback);
 }

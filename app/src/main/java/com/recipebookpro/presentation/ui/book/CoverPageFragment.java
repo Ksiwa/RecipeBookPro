@@ -47,7 +47,8 @@ public class CoverPageFragment extends Fragment {
         MaterialTextView tvSwipeHint = view.findViewById(R.id.tvCoverSwipeHint);
 
         tvOwner.setText(args.getString(ARG_OWNER, ""));
-        tvCount.setText(getString(R.string.recipe_count_label, args.getInt(ARG_COUNT, 0)));
+        int count = args.getInt(ARG_COUNT, 0);
+        tvCount.setText(getResources().getQuantityString(R.plurals.recipe_count_label_display, count, count));
         tvSwipeHint.setText(R.string.swipe_to_open);
     }
 }

@@ -181,8 +181,9 @@ public class SavedPlansBottomSheet extends BottomSheetDialogFragment {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             MealPlan p = plans.get(position);
             holder.tvName.setText(p.getName());
-            holder.tvSubtitle.setText(holder.itemView.getContext()
-                    .getString(R.string.meal_plan_duration_calories, p.getDuration(), p.getTotalCalories()));
+            holder.tvSubtitle.setText(holder.itemView.getResources()
+                    .getQuantityString(R.plurals.meal_plan_duration_calories_display,
+                            p.getDuration(), p.getDuration(), p.getTotalCalories()));
 
             boolean owned = currentUserIdOrNull != null && currentUserIdOrNull.equals(p.getUserId());
             holder.btnDelete.setVisibility(owned ? View.VISIBLE : View.GONE);

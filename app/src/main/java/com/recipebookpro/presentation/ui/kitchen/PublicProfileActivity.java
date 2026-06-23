@@ -167,8 +167,10 @@ public class PublicProfileActivity extends BaseActivity {
                     toolbar.setTitle(user.getDisplayName());
                     
                     // Safe string formatting for counts
-                    tvFollowerCount.setText(getString(R.string.followers_count, user.getFollowerCount()));
-                    tvFollowingCount.setText(getString(R.string.following_count, user.getFollowingCount()));
+                    tvFollowerCount.setText(getResources().getQuantityString(
+                            R.plurals.followers_count_display, user.getFollowerCount(), user.getFollowerCount()));
+                    tvFollowingCount.setText(getResources().getQuantityString(
+                            R.plurals.following_count_display, user.getFollowingCount(), user.getFollowingCount()));
 
                     if (!TextUtils.isEmpty(user.getProfileImageUrl())) {
                         ImageRequest request = new ImageRequest.Builder(this)

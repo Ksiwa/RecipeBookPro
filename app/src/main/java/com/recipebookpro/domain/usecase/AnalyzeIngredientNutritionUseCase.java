@@ -16,12 +16,12 @@ public class AnalyzeIngredientNutritionUseCase {
         void onError(String message);
     }
 
-    public void execute(String ingredientsText, Callback callback) {
+    public void execute(String ingredientsText, String languageCode, Callback callback) {
         if (ingredientsText == null || ingredientsText.trim().isEmpty()) {
             callback.onError("No ingredients to analyze");
             return;
         }
-        aiNutritionService.analyzeMacrosFromIngredients(ingredientsText.trim(), new AiNutritionService.ResultCallback() {
+        aiNutritionService.analyzeMacrosFromIngredients(ingredientsText.trim(), normalizeLanguage(languageCode), new AiNutritionService.ResultCallback() {
             @Override
             public void onSuccess(String rawModelText) {
                 callback.onSuccess(rawModelText);
@@ -32,5 +32,9 @@ public class AnalyzeIngredientNutritionUseCase {
                 callback.onError(message);
             }
         });
+    }
+
+    private String normalizeLanguage(String languageCode) {
+        return "tr".equals(languageCode) ? "tr" : "en";
     }
 }

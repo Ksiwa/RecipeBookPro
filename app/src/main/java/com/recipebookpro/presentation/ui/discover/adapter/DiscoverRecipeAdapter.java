@@ -75,7 +75,7 @@ public class DiscoverRecipeAdapter extends RecyclerView.Adapter<DiscoverRecipeAd
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ScoredRecipe scored = items.get(position);
         Recipe recipe = scored.recipe;
-        String currentLang = java.util.Locale.getDefault().getLanguage();
+        String currentLang = com.recipebookpro.presentation.ui.LocaleHelper.getLanguage(holder.itemView.getContext());
         holder.tvTitle.setText(recipe.getDisplayTitle(currentLang));
         holder.tvMatch.setText(holder.itemView.getContext().getString(R.string.match_percent_display, scored.matchPercent));
 
@@ -90,7 +90,8 @@ public class DiscoverRecipeAdapter extends RecyclerView.Adapter<DiscoverRecipeAd
             ownerName = holder.itemView.getContext().getString(R.string.recipe_owner_unknown);
         }
         holder.tvAuthor.setText(holder.itemView.getContext().getString(R.string.recipe_owner_label, ownerName));
-        holder.tvLikes.setText(holder.itemView.getContext().getString(R.string.likes_count, recipe.getLikes()));
+        holder.tvLikes.setText(holder.itemView.getResources()
+                .getQuantityString(R.plurals.likes_count, recipe.getLikes(), recipe.getLikes()));
         holder.tvAuthor.setOnClickListener(v -> {
             if (listener != null && recipe.getUserId() != null && !recipe.getUserId().isEmpty()) {
                 listener.onAuthorClick(recipe.getUserId());

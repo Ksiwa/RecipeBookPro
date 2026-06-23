@@ -213,6 +213,7 @@ public class RecipeAddEditActivity extends BaseActivity {
         ivPreview = findViewById(R.id.ivPreview);
         llImagePlaceholder = findViewById(R.id.llImagePlaceholder);
         etTitle = findViewById(R.id.etTitle);
+        RecipeTitleInputConfigurator.configure(etTitle);
         etDescription = findViewById(R.id.etDescription);
         etServings = findViewById(R.id.etServings);
         etCalories = findViewById(R.id.etCalories);
@@ -722,6 +723,7 @@ public class RecipeAddEditActivity extends BaseActivity {
         if (editFormUsesTranslatedLayer && snapIngredients != null && snapSteps != null) {
             currentRecipe.setTitle(snapTitle != null ? snapTitle : currentRecipe.getTitle());
             currentRecipe.setTranslatedTitle(formTitle);
+            currentRecipe.setTranslationLanguage(LocaleHelper.getLanguage(this));
             currentRecipe.setDescription(snapDescription != null ? snapDescription : currentRecipe.getDescription());
             currentRecipe.setTranslatedDescription(formDescription);
 

@@ -258,7 +258,6 @@
     <string name="create_password_message">This account uses a social sign-in provider. You can create a password now and use email/password login afterwards.</string>
     <string name="create_password_action">Create Password</string>
     <string name="password_created_for_provider">Password created successfully. You can now also sign in with email and password.</string>
-    <string name="likes_count">%1$d likes</string>
     <string name="match_percent_display">%1$d%% match</string>
     <string name="recipe_owner_label">By %1$s</string>
     <string name="recipe_owner_unknown">Unknown user</string>

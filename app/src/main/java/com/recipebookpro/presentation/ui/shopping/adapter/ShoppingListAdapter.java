@@ -54,7 +54,8 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
         holder.tvName.setText(listName);
         
         int count = list.getItems() != null ? list.getItems().size() : 0;
-        holder.tvCount.setText(holder.itemView.getContext().getString(R.string.shopping_item_count_format, count));
+        holder.tvCount.setText(holder.itemView.getResources()
+                .getQuantityString(R.plurals.shopping_item_count_display, count, count));
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onListClick(list);

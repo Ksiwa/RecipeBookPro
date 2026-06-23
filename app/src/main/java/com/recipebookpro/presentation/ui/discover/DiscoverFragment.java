@@ -1,6 +1,8 @@
 package com.recipebookpro.presentation.ui.discover;
 
 import android.content.Intent;
+import android.content.Context;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -41,6 +43,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -62,6 +65,8 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
     private final List<ScoredRecipe> results = new ArrayList<>();
     private final List<Cookbook> publicCookbooks = new ArrayList<>();
     private final Map<String, User> ownersById = new HashMap<>();
+    private final Map<Integer, List<String>> ingredientSearchTermsByChipId = new HashMap<>();
+    private final Map<String, List<String>> ingredientSearchTermsByTerm = new HashMap<>();
 
     private TranslationService translationService;
 
@@ -126,16 +131,63 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
 
     private void populateIngredients() {
         String[] commonIngredients = getResources().getStringArray(R.array.discover_default_ingredients);
-        for (String ing : commonIngredients) {
+        String[] turkishIngredients = getDiscoverDefaultIngredientsForLanguage("tr");
+        String[] englishIngredients = getDiscoverDefaultIngredientsForLanguage("en");
+        ingredientSearchTermsByChipId.clear();
+        ingredientSearchTermsByTerm.clear();
+
+        for (int i = 0; i < commonIngredients.length; i++) {
+            String ing = commonIngredients[i];
             Chip chip = new Chip(requireContext());
+            chip.setId(View.generateViewId());
             // Capitalize first letter for UI
             String capitalized = ing.substring(0, 1).toUpperCase() + ing.substring(1);
             chip.setText(capitalized);
             chip.setCheckable(true);
             chip.setClickable(true);
             chip.setOnCheckedChangeListener((buttonView, isChecked) -> performSearch());
+            List<String> searchTerms = buildIngredientSearchTerms(ing, turkishIngredients, englishIngredients, i);
+            ingredientSearchTermsByChipId.put(chip.getId(), searchTerms);
+            for (String term : searchTerms) {
+                ingredientSearchTermsByTerm.put(term, searchTerms);
+            }
             chipGroupIngredients.addView(chip);
         }
+    }
+
+    private String[] getDiscoverDefaultIngredientsForLanguage(String languageCode) {
+        Configuration configuration = new Configuration(getResources().getConfiguration());
+        configuration.setLocale(new Locale(languageCode));
+        Context localizedContext = requireContext().createConfigurationContext(configuration);
+        return localizedContext.getResources().getStringArray(R.array.discover_default_ingredients);
+    }
+
+    private List<String> buildIngredientSearchTerms(
+            String visibleIngredient,
+            String[] turkishIngredients,
+            String[] englishIngredients,
+            int index
+    ) {
+        Set<String> terms = new LinkedHashSet<>();
+        addSearchTerm(terms, visibleIngredient);
+        if (index < turkishIngredients.length) {
+            addSearchTerm(terms, turkishIngredients[index]);
+        }
+        if (index < englishIngredients.length) {
+            addSearchTerm(terms, englishIngredients[index]);
+        }
+        return new ArrayList<>(terms);
+    }
+
+    private void addSearchTerm(Set<String> terms, String value) {
+        String normalized = normalizeSearchTerm(value);
+        if (!normalized.isEmpty()) {
+            terms.add(normalized);
+        }
+    }
+
+    private String normalizeSearchTerm(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 
     private void performSearch() {
@@ -262,18 +314,16 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
         if (!isAdded()) return;
 
         List<Recipe> filtered = new ArrayList<>();
-        Set<String> selectedSet = new HashSet<>(selectedIngredients);
+        List<Set<String>> selectedIngredientGroups = buildIngredientSearchGroups(selectedIngredients);
 
         for (Recipe r : allRecipes) {
             Set<String> recipeSearchTerms = getRecipeSearchTerms(r);
 
-            if (!selectedSet.isEmpty()) {
+            if (!selectedIngredientGroups.isEmpty()) {
                 boolean hasAny = false;
-                for (String sel : selectedSet) {
-                    String translatedSel = applyManualPatchForSearch(sel);
+                for (Set<String> selectedGroup : selectedIngredientGroups) {
                     for (String term : recipeSearchTerms) {
-                        if (term.contains(sel) || sel.contains(term) || 
-                            (!translatedSel.isEmpty() && (term.contains(translatedSel) || translatedSel.contains(term)))) {
+                        if (matchesSelectedIngredient(selectedGroup, term)) {
                             hasAny = true;
                             break;
                         }
@@ -379,7 +429,7 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
 
     private void scoreAndDisplay(List<Recipe> recipes, List<String> selectedIngredients) {
         results.clear();
-        Set<String> selectedSet = new HashSet<>(selectedIngredients);
+        List<Set<String>> selectedIngredientGroups = buildIngredientSearchGroups(selectedIngredients);
 
         for (Recipe recipe : recipes) {
             Set<String> recipeIngs = getRecipeSearchTerms(recipe);
@@ -387,24 +437,22 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
             int matchPercent;
             List<String> missing = new ArrayList<>();
 
-            if (selectedSet.isEmpty()) {
+            if (selectedIngredientGroups.isEmpty()) {
                 matchPercent = 100;
             } else {
                 int matched = 0;
-                for (String sel : selectedSet) {
+                for (Set<String> selectedGroup : selectedIngredientGroups) {
                     boolean found = false;
-                    String trans = applyManualPatchForSearch(sel);
                     for (String ri : recipeIngs) {
-                        if (ri.contains(sel) || sel.contains(ri) || 
-                            (!trans.isEmpty() && (ri.contains(trans) || trans.contains(ri)))) {
+                        if (matchesSelectedIngredient(selectedGroup, ri)) {
                             found = true;
                             break;
                         }
                     }
                     if (found) matched++;
-                    else missing.add(sel);
+                    else missing.add(getDisplayTerm(selectedGroup));
                 }
-                matchPercent = (matched * 100) / selectedSet.size();
+                matchPercent = (matched * 100) / selectedIngredientGroups.size();
             }
 
             results.add(new ScoredRecipe(recipe, matchPercent, missing));
@@ -478,18 +526,76 @@ public class DiscoverFragment extends Fragment implements DiscoverRecipeAdapter.
     }
 
     private List<String> getSelectedIngredients() {
-        List<String> selected = new ArrayList<>();
+        Set<String> selected = new LinkedHashSet<>();
         for (int i = 0; i < chipGroupIngredients.getChildCount(); i++) {
             Chip chip = (Chip) chipGroupIngredients.getChildAt(i);
             if (chip.isChecked()) {
-                selected.add(chip.getText().toString().toLowerCase());
+                List<String> searchTerms = ingredientSearchTermsByChipId.get(chip.getId());
+                if (searchTerms != null && !searchTerms.isEmpty()) {
+                    selected.addAll(searchTerms);
+                } else {
+                    addSearchTerm(selected, chip.getText().toString());
+                }
             }
         }
-        return selected;
+        return new ArrayList<>(selected);
+    }
+
+    private List<Set<String>> buildIngredientSearchGroups(List<String> selectedIngredients) {
+        List<Set<String>> groups = new ArrayList<>();
+        Set<String> consumedTerms = new HashSet<>();
+
+        for (String selectedIngredient : selectedIngredients) {
+            String normalized = normalizeSearchTerm(selectedIngredient);
+            if (normalized.isEmpty() || consumedTerms.contains(normalized)) {
+                continue;
+            }
+
+            Set<String> group = new LinkedHashSet<>();
+            List<String> chipTerms = ingredientSearchTermsByTerm.get(normalized);
+            if (chipTerms != null && !chipTerms.isEmpty()) {
+                group.addAll(chipTerms);
+            } else {
+                group.add(normalized);
+                String translated = applyManualPatchForSearch(normalized);
+                if (!translated.isEmpty()) {
+                    group.add(translated);
+                }
+            }
+
+            consumedTerms.addAll(group);
+            groups.add(group);
+        }
+
+        return groups;
+    }
+
+    private boolean matchesSelectedIngredient(Set<String> selectedTerms, String recipeTerm) {
+        if (recipeTerm == null) {
+            return false;
+        }
+
+        String normalizedRecipeTerm = normalizeSearchTerm(recipeTerm);
+        for (String selectedTerm : selectedTerms) {
+            if (normalizedRecipeTerm.contains(selectedTerm) || selectedTerm.contains(normalizedRecipeTerm)) {
+                return true;
+            }
+
+            String translated = applyManualPatchForSearch(selectedTerm);
+            if (!translated.isEmpty()
+                    && (normalizedRecipeTerm.contains(translated) || translated.contains(normalizedRecipeTerm))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String getDisplayTerm(Set<String> selectedGroup) {
+        return selectedGroup.isEmpty() ? "" : selectedGroup.iterator().next();
     }
 
     private String applyManualPatchForSearch(String ingredient) {
-        String lower = ingredient.toLowerCase().trim();
+        String lower = normalizeSearchTerm(ingredient);
         Map<String, String> patches = new HashMap<>();
         // English -> Turkish
         patches.put("egg", "yumurta");

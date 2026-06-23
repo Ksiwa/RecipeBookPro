@@ -109,7 +109,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         }
 
         void bind(Recipe recipe) {
-            String currentLang = Locale.getDefault().getLanguage();
+            String currentLang = com.recipebookpro.presentation.ui.LocaleHelper.getLanguage(itemView.getContext());
             tvTitle.setText(recipe.getDisplayTitle(currentLang));
 
             // Determine data to load: URL or placeholder resource
